@@ -1,5 +1,4 @@
 "use client"
-import { Wallet } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 interface DashboardHeaderProps {
@@ -15,9 +14,6 @@ export function DashboardHeader({ categories, activeCategory, onCategoryChange }
         <div>
           <h1 className="text-xl font-bold text-foreground">투자 대시보드</h1>
           <p className="text-xs text-muted-foreground">포트폴리오 현황</p>
-        </div>
-        <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center">
-          <Wallet className="w-5 h-5 text-primary" />
         </div>
       </div>
 
