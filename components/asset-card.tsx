@@ -1,5 +1,6 @@
 "use client"
 
+import { useState } from "react"
 import { Card, CardContent } from "@/components/ui/card"
 
 interface AssetCardProps {
@@ -11,8 +12,13 @@ interface AssetCardProps {
   secondBuyPrice?: string
   thirdBuyPrice?: string
   takeProfitPrice?: string
+  secondBuyMemo?: string
+  thirdBuyMemo?: string
+  takeProfitMemo?: string
   color: string
 }
+
+type MemoKey = "second" | "third" | "profit"
 
 export function AssetCard({
   name,
@@ -23,8 +29,12 @@ export function AssetCard({
   secondBuyPrice,
   thirdBuyPrice,
   takeProfitPrice,
+  secondBuyMemo,
+  thirdBuyMemo,
+  takeProfitMemo,
   color,
 }: AssetCardProps) {
+  const [openMemo, setOpenMemo] = useState<MemoKey | null>(null)
   const remainingAmount = targetAmount - currentAmount
   const percentage = Math.min((currentAmount / targetAmount) * 100, 100)
 
@@ -36,11 +46,29 @@ export function AssetCard({
 
   const tipLeft = Math.max(6, Math.min(percentage, 88))
 
+  const toggleMemo = (key: MemoKey, hasMemo: boolean) => {
+    if (!hasMemo) return
+    setOpenMemo((prev: MemoKey | null) => prev === key ? null : key)
+  }
+
+  const priceBoxes: Array<{
+    key: MemoKey
+    label: string
+    price?: string
+    memo?: string
+    bgClass: string
+    textClass: string
+  }> = [
+    { key: "second", label: "2차 매수가", price: secondBuyPrice, memo: secondBuyMemo, bgClass: "bg-secondary/50", textClass: "text-foreground" },
+    { key: "third", label: "3차 매수가", price: thirdBuyPrice, memo: thirdBuyMemo, bgClass: "bg-secondary/50", textClass: "text-foreground" },
+    { key: "profit", label: "익절가", price: takeProfitPrice, memo: takeProfitMemo, bgClass: "bg-primary/10", textClass: "text-primary" },
+  ]
+
   return (
     <Card className="border-border/50 bg-card/80 backdrop-blur-sm py-3">
       <CardContent className="px-3">
         {/* Header */}
-        <div className="flex items-center gap-2 mb-1">
+        <div className="flex items-center gap-2 mb-0">
           <div
             className="flex items-center justify-center w-8 h-8 rounded-lg flex-shrink-0"
             style={{ backgroundColor: `${color}20` }}
@@ -80,7 +108,7 @@ export function AssetCard({
             {fmt(targetAmount)}
           </div>
 
-          <div className="relative h-2.5 bg-muted rounded-full overflow-hidden">
+          <div className="relative h-2 bg-muted rounded-full overflow-hidden">
             <div
               className="absolute top-0 left-0 h-full rounded-full transition-all duration-500"
               style={{ width: `${percentage}%`, backgroundColor: color }}
@@ -96,18 +124,32 @@ export function AssetCard({
 
         {/* Price Targets */}
         <div className="grid grid-cols-3 gap-1.5">
-          <div className="bg-secondary/50 rounded-lg p-1.5 text-center">
-            <p className="text-xs text-muted-foreground mb-0.5">2차 매수가</p>
-            <p className="text-xs font-medium text-foreground">{secondBuyPrice || "-"}</p>
-          </div>
-          <div className="bg-secondary/50 rounded-lg p-1.5 text-center">
-            <p className="text-xs text-muted-foreground mb-0.5">3차 매수가</p>
-            <p className="text-xs font-medium text-foreground">{thirdBuyPrice || "-"}</p>
-          </div>
-          <div className="bg-primary/10 rounded-lg p-1.5 text-center">
-            <p className="text-xs text-muted-foreground mb-0.5">익절가</p>
-            <p className="text-xs font-medium text-primary">{takeProfitPrice || "-"}</p>
-          </div>
+          {priceBoxes.map(({ key, label, price, memo, bgClass, textClass }) => (
+            <div key={key} className="relative">
+              {openMemo === key && memo && (
+                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 z-20 w-40 pointer-events-none">
+                  <div className="bg-card border border-border/60 rounded-lg px-2.5 py-2 text-xs text-foreground shadow-lg leading-relaxed">
+                    {memo}
+                  </div>
+                  <div
+                    className="mx-auto w-0 h-0"
+                    style={{
+                      borderLeft: "5px solid transparent",
+                      borderRight: "5px solid transparent",
+                      borderTop: "5px solid hsl(var(--border) / 0.6)",
+                    }}
+                  />
+                </div>
+              )}
+              <button
+                onClick={() => toggleMemo(key, !!memo)}
+                className={`w-full ${bgClass} rounded-lg p-1.5 text-center transition-opacity ${memo ? "cursor-pointer active:opacity-70" : "cursor-default"}`}
+              >
+                <p className="text-xs text-muted-foreground mb-0.5">{label}</p>
+                <p className={`text-xs font-medium ${textClass}`}>{price || "-"}</p>
+              </button>
+            </div>
+          ))}
         </div>
       </CardContent>
     </Card>

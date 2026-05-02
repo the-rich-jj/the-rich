@@ -26,6 +26,9 @@ const assetsData = [
     secondBuyPrice: "₩95,000/g",
     thirdBuyPrice: "₩90,000/g",
     takeProfitPrice: "₩110,000/g",
+    secondBuyMemo: "",
+    thirdBuyMemo: "",
+    takeProfitMemo: "",
     color: "#F5A623",
   },
   {
@@ -39,6 +42,9 @@ const assetsData = [
     secondBuyPrice: "₩1,100/g",
     thirdBuyPrice: "₩1,000/g",
     takeProfitPrice: "₩1,400/g",
+    secondBuyMemo: "",
+    thirdBuyMemo: "",
+    takeProfitMemo: "",
     color: "#C0C0C0",
   },
   {
@@ -52,6 +58,9 @@ const assetsData = [
     secondBuyPrice: "$4.00/lb",
     thirdBuyPrice: "$3.80/lb",
     takeProfitPrice: "$4.80/lb",
+    secondBuyMemo: "",
+    thirdBuyMemo: "",
+    takeProfitMemo: "",
     color: "#B87333",
   },
   {
@@ -65,6 +74,9 @@ const assetsData = [
     secondBuyPrice: "$2.50",
     thirdBuyPrice: "$2.20",
     takeProfitPrice: "$3.50",
+    secondBuyMemo: "",
+    thirdBuyMemo: "",
+    takeProfitMemo: "",
     color: "#FF6B35",
   },
   {
@@ -78,6 +90,9 @@ const assetsData = [
     secondBuyPrice: "$70/bbl",
     thirdBuyPrice: "$65/bbl",
     takeProfitPrice: "$85/bbl",
+    secondBuyMemo: "",
+    thirdBuyMemo: "",
+    takeProfitMemo: "",
     color: "#1A1A2E",
   },
   {
@@ -91,6 +106,9 @@ const assetsData = [
     secondBuyPrice: "$60,000",
     thirdBuyPrice: "$55,000",
     takeProfitPrice: "$100,000",
+    secondBuyMemo: "",
+    thirdBuyMemo: "",
+    takeProfitMemo: "",
     color: "#F7931A",
   },
   {
@@ -104,6 +122,9 @@ const assetsData = [
     secondBuyPrice: "$3,000",
     thirdBuyPrice: "$2,500",
     takeProfitPrice: "$5,000",
+    secondBuyMemo: "",
+    thirdBuyMemo: "",
+    takeProfitMemo: "",
     color: "#627EEA",
   },
   {
@@ -117,6 +138,9 @@ const assetsData = [
     secondBuyPrice: "$120",
     thirdBuyPrice: "$100",
     takeProfitPrice: "$250",
+    secondBuyMemo: "",
+    thirdBuyMemo: "",
+    takeProfitMemo: "",
     color: "#00FFA3",
   },
   {
@@ -130,6 +154,9 @@ const assetsData = [
     secondBuyPrice: "$180",
     thirdBuyPrice: "$160",
     takeProfitPrice: "$280",
+    secondBuyMemo: "",
+    thirdBuyMemo: "",
+    takeProfitMemo: "",
     color: "#E31937",
   },
 ]
@@ -164,6 +191,9 @@ export default function DashboardPage() {
               secondBuyPrice={asset.secondBuyPrice}
               thirdBuyPrice={asset.thirdBuyPrice}
               takeProfitPrice={asset.takeProfitPrice}
+              secondBuyMemo={asset.secondBuyMemo}
+              thirdBuyMemo={asset.thirdBuyMemo}
+              takeProfitMemo={asset.takeProfitMemo}
               color={asset.color}
             />
           ))}
