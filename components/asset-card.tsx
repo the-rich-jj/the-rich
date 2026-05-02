@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { Card, CardContent } from "@/components/ui/card"
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
@@ -82,25 +82,27 @@ export function AssetCard({
   ]
 
   const activeBox = priceBoxes.find(b => b.key === (openModal ?? openTooltip))
+  const savedScrollY = useRef(0)
 
-  const lockScroll = () => {
-    const y = window.scrollY
-    document.body.style.cssText = `position:fixed;top:-${y}px;left:0;right:0;`
-    document.body.dataset.scrollY = String(y)
-  }
-
-  const unlockScroll = () => {
-    const y = parseInt(document.body.dataset.scrollY ?? '0')
-    document.body.style.cssText = ''
-    window.scrollTo(0, y)
-  }
+  useEffect(() => {
+    if (openModal === null) return
+    const restore = () => window.scrollTo(0, savedScrollY.current)
+    window.addEventListener('scroll', restore)
+    window.visualViewport?.addEventListener('scroll', restore)
+    window.visualViewport?.addEventListener('resize', restore)
+    return () => {
+      window.removeEventListener('scroll', restore)
+      window.visualViewport?.removeEventListener('scroll', restore)
+      window.visualViewport?.removeEventListener('resize', restore)
+    }
+  }, [openModal])
 
   const openEditModal = (box: typeof priceBoxes[0]) => {
+    savedScrollY.current = window.scrollY
     setDraftPrice(local[box.priceKey])
     setDraftMemo(local[box.memoKey])
     setOpenTooltip(null)
     setOpenModal(box.key)
-    lockScroll()
   }
 
   const handleSave = async () => {
@@ -112,7 +114,6 @@ export function AssetCard({
       [activeBox.memoKey]: draftMemo.trim(),
     }))
     setOpenModal(null)
-    unlockScroll()
     await Promise.all([
       fetch('/api/update-price', {
         method: 'POST',
@@ -236,7 +237,7 @@ export function AssetCard({
       </Card>
 
       {/* Edit Modal */}
-      <Dialog open={openModal !== null} onOpenChange={open => { if (!open) { setOpenModal(null); unlockScroll() } }}>
+      <Dialog open={openModal !== null} onOpenChange={open => { if (!open) setOpenModal(null) }}>
         <DialogContent
           className="bg-[#1A1A1E] border-border/50 w-[calc(100%-2rem)] max-w-sm"
           style={{ top: '5%', translate: '-50% 0' }}

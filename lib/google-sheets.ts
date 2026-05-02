@@ -25,7 +25,13 @@ export type DomesticAsset = {
   transferAmount: number
 }
 
-export type UsAsset = { name: string; ticker: string }
+export type UsAsset = {
+  name: string
+  ticker: string
+  currentAmount: number
+  targetAmount: number
+  transferAmount: number
+}
 
 export type PriceData = {
   secondBuyPrice: string
@@ -47,7 +53,7 @@ export async function fetchAssetData(): Promise<{
 
   const [domesticRes, usRes, priceRes] = await Promise.all([
     sheets.spreadsheets.values.get({ spreadsheetId: id, range: '자산현황!A4:F9' }),
-    sheets.spreadsheets.values.get({ spreadsheetId: id, range: '비중관리(미국)!B3:C19' }),
+    sheets.spreadsheets.values.get({ spreadsheetId: id, range: '비중관리(미국)!B3:H20' }),
     sheets.spreadsheets.values.get({ spreadsheetId: id, range: '매매가관리!A2:G30' }),
   ])
 
@@ -61,7 +67,13 @@ export async function fetchAssetData(): Promise<{
     .filter(a => a.name)
 
   const us: UsAsset[] = (usRes.data.values ?? [])
-    .map(r => ({ name: r[0] ?? '', ticker: r[1] ?? '' }))
+    .map(r => ({
+      name: r[0] ?? '',
+      ticker: r[1] ?? '',
+      currentAmount: parseKRW(r[2] ?? ''),
+      targetAmount: parseKRW(r[5] ?? ''),
+      transferAmount: parseKRW(r[6] ?? ''),
+    }))
     .filter(a => a.name)
 
   const prices: Record<string, PriceData> = {}
