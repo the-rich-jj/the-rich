@@ -1,9 +1,6 @@
 "use client"
 
 import { Card, CardContent } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { ChevronDown, ChevronUp } from "lucide-react"
-import { useState } from "react"
 
 interface AssetCardProps {
   name: string
@@ -14,7 +11,6 @@ interface AssetCardProps {
   secondBuyPrice?: string
   thirdBuyPrice?: string
   takeProfitPrice?: string
-  memo?: string
   color: string
 }
 
@@ -27,140 +23,92 @@ export function AssetCard({
   secondBuyPrice,
   thirdBuyPrice,
   takeProfitPrice,
-  memo,
   color,
 }: AssetCardProps) {
-  const [isExpanded, setIsExpanded] = useState(false)
   const remainingAmount = targetAmount - currentAmount
-  const percentage = (currentAmount / targetAmount) * 100
+  const percentage = Math.min((currentAmount / targetAmount) * 100, 100)
 
-  const formatKRW = (amount: number) => {
-    if (amount >= 10000) {
-      return `${(amount / 10000).toFixed(0)}만원`
-    }
-    return `${amount.toLocaleString()}원`
+  const fmt = (amount: number) => {
+    if (amount >= 100000000) return `${(amount / 100000000).toFixed(1)}억`
+    if (amount >= 10000) return `${(amount / 10000).toFixed(0)}만`
+    return `${amount.toLocaleString()}`
   }
 
+  const tipLeft = Math.max(6, Math.min(percentage, 88))
+
   return (
-    <Card className="overflow-hidden border-border/50 bg-card/80 backdrop-blur-sm">
-      <CardContent className="p-4">
+    <Card className="border-border/50 bg-card/80 backdrop-blur-sm">
+      <CardContent className="p-3">
         {/* Header */}
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center gap-3">
-            <div
-              className="flex items-center justify-center w-10 h-10 rounded-xl"
-              style={{ backgroundColor: `${color}20` }}
-            >
-              <span style={{ color }}>{icon}</span>
-            </div>
-            <div>
-              <h3 className="font-semibold text-foreground">{name}</h3>
-              <p className="text-xs text-muted-foreground">{symbol}</p>
-            </div>
-          </div>
-          <Badge
-            variant="secondary"
-            className="text-xs font-medium"
-            style={{ 
-              backgroundColor: `${color}20`,
-              color: color 
-            }}
+        <div className="flex items-center gap-2 mb-3">
+          <div
+            className="flex items-center justify-center w-8 h-8 rounded-lg flex-shrink-0"
+            style={{ backgroundColor: `${color}20` }}
           >
-            {percentage.toFixed(1)}%
-          </Badge>
+            <span style={{ color }}>{icon}</span>
+          </div>
+          <div>
+            <h3 className="font-semibold text-sm text-foreground">{name}</h3>
+            <p className="text-xs text-muted-foreground">{symbol}</p>
+          </div>
         </div>
 
         {/* Progress Bar */}
-        <div className="mb-4">
-          <div className="flex justify-between text-xs text-muted-foreground mb-2">
-            <span>보유</span>
-            <span>목표</span>
-          </div>
-          <div className="relative h-3 bg-muted rounded-full overflow-hidden">
+        <div className="pt-7 mb-3 relative">
+          {/* 보유 말풍선 */}
+          <div
+            className="absolute top-0 -translate-x-1/2 flex flex-col items-center"
+            style={{ left: `${tipLeft}%` }}
+          >
             <div
-              className="absolute top-0 left-0 h-full rounded-full transition-all duration-500"
-              style={{ 
-                width: `${Math.min(percentage, 100)}%`,
-                backgroundColor: color 
+              className="rounded px-1.5 py-0.5 text-xs font-semibold text-white leading-tight whitespace-nowrap"
+              style={{ backgroundColor: color }}
+            >
+              {fmt(currentAmount)}
+            </div>
+            <div
+              className="w-0 h-0"
+              style={{
+                borderLeft: "4px solid transparent",
+                borderRight: "4px solid transparent",
+                borderTop: `4px solid ${color}`,
               }}
             />
           </div>
-        </div>
+          {/* 목표 레이블 */}
+          <div className="absolute top-0.5 right-0 text-xs text-muted-foreground whitespace-nowrap">
+            {fmt(targetAmount)}
+          </div>
 
-        {/* Amounts */}
-        <div className="grid grid-cols-3 gap-2 text-center mb-3">
-          <div className="bg-muted/50 rounded-lg p-2">
-            <p className="text-xs text-muted-foreground mb-1">보유</p>
-            <p className="text-sm font-semibold text-foreground">
-              {formatKRW(currentAmount)}
-            </p>
+          <div className="relative h-2.5 bg-muted rounded-full overflow-hidden">
+            <div
+              className="absolute top-0 left-0 h-full rounded-full transition-all duration-500"
+              style={{ width: `${percentage}%`, backgroundColor: color }}
+            />
           </div>
-          <div className="bg-muted/50 rounded-lg p-2">
-            <p className="text-xs text-muted-foreground mb-1">목표</p>
-            <p className="text-sm font-semibold text-foreground">
-              {formatKRW(targetAmount)}
-            </p>
-          </div>
-          <div className="bg-muted/50 rounded-lg p-2">
-            <p className="text-xs text-muted-foreground mb-1">추가 매수</p>
-            <p className="text-sm font-semibold" style={{ color }}>
-              {formatKRW(remainingAmount)}
-            </p>
+
+          <div className="flex justify-between text-xs text-muted-foreground mt-1">
+            <span>보유</span>
+            <span style={{ color }}>+{fmt(remainingAmount)} 추가</span>
+            <span>목표</span>
           </div>
         </div>
 
-        {/* Expand/Collapse Button */}
-        <button
-          onClick={() => setIsExpanded(!isExpanded)}
-          className="w-full flex items-center justify-center gap-1 py-2 text-xs text-muted-foreground hover:text-foreground transition-colors"
-        >
-          {isExpanded ? (
-            <>
-              <span>접기</span>
-              <ChevronUp className="w-4 h-4" />
-            </>
-          ) : (
-            <>
-              <span>매수가 & 메모</span>
-              <ChevronDown className="w-4 h-4" />
-            </>
-          )}
-        </button>
-
-        {/* Expandable Content */}
-        {isExpanded && (
-          <div className="pt-3 border-t border-border/50 space-y-3 animate-in slide-in-from-top-2 duration-200">
-            {/* Price Targets */}
-            <div className="grid grid-cols-3 gap-2">
-              <div className="bg-secondary/50 rounded-lg p-2 text-center">
-                <p className="text-xs text-muted-foreground mb-1">2차 매수가</p>
-                <p className="text-xs font-medium text-foreground">
-                  {secondBuyPrice || "-"}
-                </p>
-              </div>
-              <div className="bg-secondary/50 rounded-lg p-2 text-center">
-                <p className="text-xs text-muted-foreground mb-1">3차 매수가</p>
-                <p className="text-xs font-medium text-foreground">
-                  {thirdBuyPrice || "-"}
-                </p>
-              </div>
-              <div className="bg-primary/10 rounded-lg p-2 text-center">
-                <p className="text-xs text-muted-foreground mb-1">익절가</p>
-                <p className="text-xs font-medium text-primary">
-                  {takeProfitPrice || "-"}
-                </p>
-              </div>
-            </div>
-
-            {/* Memo */}
-            {memo && (
-              <div className="bg-muted/30 rounded-lg p-3">
-                <p className="text-xs text-muted-foreground mb-1">메모</p>
-                <p className="text-sm text-foreground leading-relaxed">{memo}</p>
-              </div>
-            )}
+        {/* Price Targets */}
+        <div className="grid grid-cols-3 gap-1.5">
+          <div className="bg-secondary/50 rounded-lg p-1.5 text-center">
+            <p className="text-xs text-muted-foreground mb-0.5">2차 매수가</p>
+            <p className="text-xs font-medium text-foreground">{secondBuyPrice || "-"}</p>
           </div>
-        )}
+          <div className="bg-secondary/50 rounded-lg p-1.5 text-center">
+            <p className="text-xs text-muted-foreground mb-0.5">3차 매수가</p>
+            <p className="text-xs font-medium text-foreground">{thirdBuyPrice || "-"}</p>
+          </div>
+          <div className="bg-primary/10 rounded-lg p-1.5 text-center">
+            <p className="text-xs text-muted-foreground mb-0.5">익절가</p>
+            <p className="text-xs font-medium text-primary">{takeProfitPrice || "-"}</p>
+          </div>
+        </div>
       </CardContent>
     </Card>
   )

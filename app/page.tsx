@@ -26,7 +26,6 @@ const assetsData = [
     secondBuyPrice: "₩95,000/g",
     thirdBuyPrice: "₩90,000/g",
     takeProfitPrice: "₩110,000/g",
-    memo: "금리 인하 시 추가 매수 고려. 안전자산으로 포트폴리오 10% 유지.",
     color: "#F5A623",
   },
   {
@@ -40,7 +39,6 @@ const assetsData = [
     secondBuyPrice: "₩1,100/g",
     thirdBuyPrice: "₩1,000/g",
     takeProfitPrice: "₩1,400/g",
-    memo: "금 대비 저평가 구간에서 비중 확대 예정.",
     color: "#C0C0C0",
   },
   {
@@ -54,7 +52,6 @@ const assetsData = [
     secondBuyPrice: "$4.00/lb",
     thirdBuyPrice: "$3.80/lb",
     takeProfitPrice: "$4.80/lb",
-    memo: "전기차 수요 증가에 따른 장기 투자.",
     color: "#B87333",
   },
   {
@@ -68,7 +65,6 @@ const assetsData = [
     secondBuyPrice: "$2.50",
     thirdBuyPrice: "$2.20",
     takeProfitPrice: "$3.50",
-    memo: "겨울철 수요 증가 전 분할 매수 계획.",
     color: "#FF6B35",
   },
   {
@@ -82,7 +78,6 @@ const assetsData = [
     secondBuyPrice: "$70/bbl",
     thirdBuyPrice: "$65/bbl",
     takeProfitPrice: "$85/bbl",
-    memo: "OPEC 감산 이슈 주시 필요.",
     color: "#1A1A2E",
   },
   {
@@ -96,7 +91,6 @@ const assetsData = [
     secondBuyPrice: "$60,000",
     thirdBuyPrice: "$55,000",
     takeProfitPrice: "$100,000",
-    memo: "반감기 후 상승 사이클 기대. DCA 전략 유지.",
     color: "#F7931A",
   },
   {
@@ -110,7 +104,6 @@ const assetsData = [
     secondBuyPrice: "$3,000",
     thirdBuyPrice: "$2,500",
     takeProfitPrice: "$5,000",
-    memo: "ETF 승인 기대감. 스테이킹 수익도 고려.",
     color: "#627EEA",
   },
   {
@@ -124,7 +117,6 @@ const assetsData = [
     secondBuyPrice: "$120",
     thirdBuyPrice: "$100",
     takeProfitPrice: "$250",
-    memo: "고성능 체인으로 생태계 확장 중. 변동성 주의.",
     color: "#00FFA3",
   },
   {
@@ -138,7 +130,6 @@ const assetsData = [
     secondBuyPrice: "$180",
     thirdBuyPrice: "$160",
     takeProfitPrice: "$280",
-    memo: "FSD 진행 상황 모니터링 중.",
     color: "#E31937",
   },
 ]
@@ -173,7 +164,6 @@ export default function DashboardPage() {
               secondBuyPrice={asset.secondBuyPrice}
               thirdBuyPrice={asset.thirdBuyPrice}
               takeProfitPrice={asset.takeProfitPrice}
-              memo={asset.memo}
               color={asset.color}
             />
           ))}
