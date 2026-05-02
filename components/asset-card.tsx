@@ -40,7 +40,7 @@ export function AssetCard({
     <Card className="border-border/50 bg-card/80 backdrop-blur-sm py-3">
       <CardContent className="px-3">
         {/* Header */}
-        <div className="flex items-center gap-2 mb-2">
+        <div className="flex items-center gap-2 mb-1">
           <div
             className="flex items-center justify-center w-8 h-8 rounded-lg flex-shrink-0"
             style={{ backgroundColor: `${color}20` }}
