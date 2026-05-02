@@ -3,8 +3,9 @@
 import { useState } from "react"
 import { DashboardHeader } from "@/components/dashboard-header"
 import { AssetCard } from "@/components/asset-card"
+import type { DomesticAsset } from "@/lib/google-sheets"
 import {
-  Gem, CircleDollarSign, Cpu, Flame, Bitcoin, Coins, Zap, Droplets,
+  Gem, CircleDollarSign, Cpu, Flame, Bitcoin, Coins, Zap,
   TrendingUp, ShoppingCart, Globe, Monitor, Shield, Pill, Rocket,
   Bot, Brain, BarChart2, DollarSign,
 } from "lucide-react"
@@ -17,6 +18,7 @@ type AssetData = {
   category: string
   targetAmount: number
   currentAmount: number
+  transferAmount: number
   secondBuyPrice: string
   thirdBuyPrice: string
   takeProfitPrice: string
@@ -52,7 +54,32 @@ const ASSET_CONFIG: Record<string, { symbol: string; icon: React.ReactNode; colo
   'Defiance AI and Power Infrastructure': { symbol: 'AIPX',   icon: <Zap className="w-5 h-5" />,           color: '#6366F1', category: '미국주식' },
 }
 
-function buildAssets(names: string[], startId: number): AssetData[] {
+function buildDomesticAssets(entries: DomesticAsset[], startId: number): AssetData[] {
+  return entries.map((entry, idx) => {
+    const config = ASSET_CONFIG[entry.name] ?? {
+      symbol: entry.name.split(' ')[0].toUpperCase().slice(0, 6),
+      icon: <TrendingUp className="w-5 h-5" />,
+      color: '#6B7280',
+      category: '원자재',
+    }
+    return {
+      id: startId + idx,
+      name: entry.name,
+      ...config,
+      currentAmount: entry.currentAmount,
+      targetAmount: entry.targetAmount,
+      transferAmount: entry.transferAmount,
+      secondBuyPrice: '',
+      thirdBuyPrice: '',
+      takeProfitPrice: '',
+      secondBuyMemo: '',
+      thirdBuyMemo: '',
+      takeProfitMemo: '',
+    }
+  })
+}
+
+function buildUsAssets(names: string[], startId: number): AssetData[] {
   return names.map((name, idx) => {
     const config = ASSET_CONFIG[name] ?? {
       symbol: name.split(' ')[0].toUpperCase().slice(0, 6),
@@ -64,8 +91,9 @@ function buildAssets(names: string[], startId: number): AssetData[] {
       id: startId + idx,
       name,
       ...config,
-      targetAmount: 0,
       currentAmount: 0,
+      targetAmount: 0,
+      transferAmount: 0,
       secondBuyPrice: '',
       thirdBuyPrice: '',
       takeProfitPrice: '',
@@ -79,7 +107,7 @@ function buildAssets(names: string[], startId: number): AssetData[] {
 const categories = ['전체', '원자재', '에너지', '암호화폐', '미국주식']
 
 interface Props {
-  domesticAssets: string[]
+  domesticAssets: DomesticAsset[]
   usAssets: string[]
 }
 
@@ -88,8 +116,8 @@ export function DashboardClient({ domesticAssets, usAssets }: Props) {
   const [searchQuery, setSearchQuery] = useState('')
 
   const allAssets: AssetData[] = [
-    ...buildAssets(domesticAssets, 1),
-    ...buildAssets(usAssets, domesticAssets.length + 1),
+    ...buildDomesticAssets(domesticAssets, 1),
+    ...buildUsAssets(usAssets, domesticAssets.length + 1),
   ]
 
   const filtered = allAssets
@@ -119,6 +147,7 @@ export function DashboardClient({ domesticAssets, usAssets }: Props) {
               icon={asset.icon}
               targetAmount={asset.targetAmount}
               currentAmount={asset.currentAmount}
+              transferAmount={asset.transferAmount}
               secondBuyPrice={asset.secondBuyPrice}
               thirdBuyPrice={asset.thirdBuyPrice}
               takeProfitPrice={asset.takeProfitPrice}

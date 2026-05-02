@@ -1,7 +1,7 @@
 import { DashboardClient } from '@/components/dashboard-client'
-import { fetchAssetNames } from '@/lib/google-sheets'
+import { fetchAssetData } from '@/lib/google-sheets'
 
 export default async function DashboardPage() {
-  const { domestic, us } = await fetchAssetNames()
+  const { domestic, us } = await fetchAssetData()
   return <DashboardClient domesticAssets={domestic} usAssets={us} />
 }

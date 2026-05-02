@@ -9,6 +9,7 @@ interface AssetCardProps {
   icon: React.ReactNode
   targetAmount: number
   currentAmount: number
+  transferAmount: number
   secondBuyPrice?: string
   thirdBuyPrice?: string
   takeProfitPrice?: string
@@ -26,6 +27,7 @@ export function AssetCard({
   icon,
   targetAmount,
   currentAmount,
+  transferAmount,
   secondBuyPrice,
   thirdBuyPrice,
   takeProfitPrice,
@@ -35,8 +37,7 @@ export function AssetCard({
   color,
 }: AssetCardProps) {
   const [openMemo, setOpenMemo] = useState<MemoKey | null>(null)
-  const remainingAmount = targetAmount - currentAmount
-  const percentage = Math.min((currentAmount / targetAmount) * 100, 100)
+  const percentage = targetAmount > 0 ? Math.min((currentAmount / targetAmount) * 100, 100) : 0
 
   const fmt = (amount: number) => {
     if (amount >= 100000000) return `${(amount / 100000000).toFixed(1)}억`
@@ -124,7 +125,9 @@ export function AssetCard({
 
           <div className="flex justify-between text-xs text-muted-foreground mt-2">
             <span>보유</span>
-            <span style={{ color }}>+{fmt(remainingAmount)} 추가</span>
+            <span style={{ color: transferAmount < 0 ? '#EF4444' : color }}>
+              {transferAmount < 0 ? `-${fmt(Math.abs(transferAmount))} 초과` : `+${fmt(transferAmount)} 추가`}
+            </span>
             <span>목표</span>
           </div>
         </div>
