@@ -24,13 +24,19 @@ export function DashboardHeader({ categories, activeCategory, onCategoryChange }
             key={category}
             onClick={() => onCategoryChange(category)}
             className={cn(
-              "px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-all duration-200",
+              "relative overflow-hidden px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap",
               activeCategory === category
-                ? "bg-primary text-primary-foreground"
-                : "bg-muted text-muted-foreground hover:bg-muted/80"
+                ? "text-black"
+                : "bg-muted text-muted-foreground hover:bg-muted/80 transition-colors duration-200"
             )}
           >
-            {category}
+            {activeCategory === category && (
+              <span
+                key={`fill-${category}`}
+                className="absolute inset-0 rounded-full bg-white origin-left animate-[tab-fill_0.25s_ease-out_forwards]"
+              />
+            )}
+            <span className="relative z-10">{category}</span>
           </button>
         ))}
       </div>

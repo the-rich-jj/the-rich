@@ -128,7 +128,7 @@ export function AssetCard({
             <div key={key} className="relative">
               {openMemo === key && memo && (
                 <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 z-20 w-40 pointer-events-none">
-                  <div className="bg-[#252528]/80 backdrop-blur-md border border-border/60 rounded-lg px-2.5 py-2 text-xs text-foreground shadow-lg leading-relaxed">
+                  <div className="bg-[#252528]/60 backdrop-blur-md border border-border/60 rounded-lg px-2.5 py-2 text-xs text-foreground shadow-lg leading-relaxed">
                     {memo}
                   </div>
                   <div
