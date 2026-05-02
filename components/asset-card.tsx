@@ -38,7 +38,7 @@ export function AssetCard({
 
   return (
     <Card className="border-border/50 bg-card/80 backdrop-blur-sm">
-      <CardContent className="p-3">
+      <CardContent className="px-3 py-2">
         {/* Header */}
         <div className="flex items-center gap-2 mb-2">
           <div
@@ -87,7 +87,7 @@ export function AssetCard({
             />
           </div>
 
-          <div className="flex justify-between text-xs text-muted-foreground mt-1">
+          <div className="flex justify-between text-xs text-muted-foreground mt-2">
             <span>보유</span>
             <span style={{ color }}>+{fmt(remainingAmount)} 추가</span>
             <span>목표</span>
