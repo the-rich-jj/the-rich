@@ -56,16 +56,16 @@ export function AssetCard({
     label: string
     price?: string
     memo?: string
-    bgClass: string
+    bgColor: string
     textClass: string
   }> = [
-    { key: "second", label: "2차 매수가", price: secondBuyPrice, memo: secondBuyMemo, bgClass: "bg-secondary/50", textClass: "text-foreground" },
-    { key: "third", label: "3차 매수가", price: thirdBuyPrice, memo: thirdBuyMemo, bgClass: "bg-secondary/50", textClass: "text-foreground" },
-    { key: "profit", label: "익절가", price: takeProfitPrice, memo: takeProfitMemo, bgClass: "bg-primary/10", textClass: "text-primary" },
+    { key: "second", label: "2차 매수가", price: secondBuyPrice, memo: secondBuyMemo, bgColor: "#252528", textClass: "text-foreground" },
+    { key: "third",  label: "3차 매수가", price: thirdBuyPrice,  memo: thirdBuyMemo,  bgColor: "#252528", textClass: "text-foreground" },
+    { key: "profit", label: "익절가",     price: takeProfitPrice, memo: takeProfitMemo, bgColor: "#1E2820", textClass: "text-primary" },
   ]
 
   return (
-    <Card className="border-border/50 bg-card/80 backdrop-blur-sm py-3">
+    <Card className="border-border/50 py-3 bg-[#1A1A1E]">
       <CardContent className="px-3">
         {/* Header */}
         <div className="flex items-center gap-2 mb-0">
@@ -108,7 +108,7 @@ export function AssetCard({
             {fmt(targetAmount)}
           </div>
 
-          <div className="relative h-2 bg-muted rounded-full overflow-hidden">
+          <div className="relative h-2 rounded-full overflow-hidden bg-[#2A2A2E]">
             <div
               className="absolute top-0 left-0 h-full rounded-full transition-all duration-500"
               style={{ width: `${percentage}%`, backgroundColor: color }}
@@ -124,11 +124,11 @@ export function AssetCard({
 
         {/* Price Targets */}
         <div className="grid grid-cols-3 gap-1.5">
-          {priceBoxes.map(({ key, label, price, memo, bgClass, textClass }) => (
+          {priceBoxes.map(({ key, label, price, memo, bgColor, textClass }) => (
             <div key={key} className="relative">
               {openMemo === key && memo && (
                 <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 z-20 w-40 pointer-events-none">
-                  <div className="bg-card border border-border/60 rounded-lg px-2.5 py-2 text-xs text-foreground shadow-lg leading-relaxed">
+                  <div className="bg-[#252528] border border-border/60 rounded-lg px-2.5 py-2 text-xs text-foreground shadow-lg leading-relaxed">
                     {memo}
                   </div>
                   <div
@@ -143,7 +143,8 @@ export function AssetCard({
               )}
               <button
                 onClick={() => toggleMemo(key, !!memo)}
-                className={`w-full ${bgClass} rounded-lg p-1.5 text-center transition-opacity ${memo ? "cursor-pointer active:opacity-70" : "cursor-default"}`}
+                className={`w-full rounded-lg p-1.5 text-center transition-opacity ${memo ? "cursor-pointer active:opacity-70" : "cursor-default"}`}
+                style={{ backgroundColor: bgColor }}
               >
                 <p className="text-xs text-muted-foreground mb-0.5">{label}</p>
                 <p className={`text-xs font-medium ${textClass}`}>{price || "-"}</p>
