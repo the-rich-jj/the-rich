@@ -1,8 +1,6 @@
 "use client"
-
 import { useState } from "react"
 import { DashboardHeader } from "@/components/dashboard-header"
-import { CategoryTabs } from "@/components/category-tabs"
 import { AssetCard } from "@/components/asset-card"
 import { 
   Gem, 
@@ -16,7 +14,6 @@ import {
   TrendingUp
 } from "lucide-react"
 
-// 샘플 데이터 (나중에 Google Sheets에서 가져올 예정)
 const assetsData = [
   {
     id: 1,
@@ -155,14 +152,9 @@ export default function DashboardPage() {
     ? assetsData
     : assetsData.filter((asset) => asset.category === activeCategory)
 
-  const totalInvested = assetsData.reduce((sum, asset) => sum + asset.currentAmount, 0)
-  const totalTarget = assetsData.reduce((sum, asset) => sum + asset.targetAmount, 0)
-
   return (
     <div className="min-h-screen bg-background pb-8">
-      <DashboardHeader totalInvested={totalInvested} totalTarget={totalTarget} />
-      
-      <CategoryTabs
+      <DashboardHeader
         categories={categories}
         activeCategory={activeCategory}
         onCategoryChange={setActiveCategory}
@@ -188,7 +180,6 @@ export default function DashboardPage() {
         </div>
       </main>
 
-      {/* Bottom Safe Area */}
       <div className="h-6" />
     </div>
   )
