@@ -74,10 +74,11 @@ export function AssetCard({
     memoKey: keyof typeof local
     bgColor: string
     textClass: string
+    tooltipAlign: string
   }> = [
-    { key: "second", label: "2차 매수가", priceKey: "secondBuyPrice", memoKey: "secondBuyMemo", bgColor: "#252528", textClass: "text-foreground" },
-    { key: "third",  label: "3차 매수가", priceKey: "thirdBuyPrice",  memoKey: "thirdBuyMemo",  bgColor: "#252528", textClass: "text-foreground" },
-    { key: "profit", label: "익절가",     priceKey: "takeProfitPrice", memoKey: "takeProfitMemo", bgColor: "#1E2820", textClass: "text-primary" },
+    { key: "second", label: "2차 매수가", priceKey: "secondBuyPrice", memoKey: "secondBuyMemo", bgColor: "#252528", textClass: "text-foreground", tooltipAlign: "left-0 translate-x-0" },
+    { key: "third",  label: "3차 매수가", priceKey: "thirdBuyPrice",  memoKey: "thirdBuyMemo",  bgColor: "#252528", textClass: "text-foreground", tooltipAlign: "left-1/2 -translate-x-1/2" },
+    { key: "profit", label: "익절가",     priceKey: "takeProfitPrice", memoKey: "takeProfitMemo", bgColor: "#1E2820", textClass: "text-primary",  tooltipAlign: "right-0 left-auto translate-x-0" },
   ]
 
   const activeBox = priceBoxes.find(b => b.key === (openModal ?? openTooltip))
@@ -175,12 +176,12 @@ export function AssetCard({
                   {/* Tooltip */}
                   {openTooltip === box.key && (
                     <div
-                      className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 z-20 w-max max-w-[180px]"
+                      className={`absolute bottom-full mb-1.5 z-20 w-56 ${box.tooltipAlign}`}
                       onClick={(e: { stopPropagation: () => void }) => e.stopPropagation()}
                     >
                       <div className="bg-[#252528]/60 backdrop-blur-md border border-border/60 rounded-lg px-2.5 py-2 shadow-lg">
                         <div className="flex items-start justify-between gap-2">
-                          <p className="text-xs text-foreground leading-relaxed flex-1">
+                          <p className="text-xs text-foreground leading-relaxed flex-1 break-words">
                             {memo || <span className="text-muted-foreground/50">메모 없음</span>}
                           </p>
                           <button
@@ -222,7 +223,7 @@ export function AssetCard({
 
       {/* Edit Modal */}
       <Dialog open={openModal !== null} onOpenChange={open => { if (!open) setOpenModal(null) }}>
-        <DialogContent className="bg-[#1A1A1E] border-border/50 max-w-sm">
+        <DialogContent className="bg-[#1A1A1E] border-border/50 max-w-sm top-[6%] translate-y-0">
           <DialogHeader>
             <DialogTitle className="text-base text-foreground">
               {name} · {activeBox?.label}
@@ -247,7 +248,7 @@ export function AssetCard({
               <textarea
                 value={draftMemo}
                 onChange={e => setDraftMemo(e.target.value)}
-                rows={4}
+                rows={3}
                 style={{ fontSize: '16px' }}
                 className="w-full rounded-lg bg-[#252528] border border-border/40 px-3 py-2 text-foreground outline-none focus:border-border resize-none leading-relaxed"
                 placeholder="매수/익절 근거를 적어보세요"
