@@ -45,7 +45,7 @@ export function AssetCard({
     return `${amount.toLocaleString()}`
   }
 
-  const tipLeft = Math.max(6, Math.min(percentage, 88))
+  const tipLeft = Math.max(6, Math.min(percentage, 92))
 
   useEffect(() => {
     if (openMemo === null) return
@@ -111,11 +111,6 @@ export function AssetCard({
               }}
             />
           </div>
-          {/* 목표 레이블 */}
-          <div className="absolute top-0.5 right-0 text-xs text-muted-foreground whitespace-nowrap">
-            {fmt(targetAmount)}
-          </div>
-
           <div className="relative h-2 rounded-full overflow-hidden bg-[#2A2A2E]">
             <div
               className="absolute top-0 left-0 h-full rounded-full transition-all duration-500"
@@ -128,7 +123,7 @@ export function AssetCard({
             <span style={{ color: transferAmount < 0 ? '#EF4444' : color }}>
               {transferAmount < 0 ? `-${fmt(Math.abs(transferAmount))} 초과` : `+${fmt(transferAmount)} 추가`}
             </span>
-            <span>목표</span>
+            <span>목표 {fmt(targetAmount)}</span>
           </div>
         </div>
 
@@ -137,8 +132,8 @@ export function AssetCard({
           {priceBoxes.map(({ key, label, price, memo, bgColor, textClass }) => (
             <div key={key} className="relative">
               {openMemo === key && memo && (
-                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 z-20 w-40 pointer-events-none">
-                  <div className="bg-[#252528]/60 backdrop-blur-md border border-border/60 rounded-lg px-2.5 py-2 text-xs text-foreground shadow-lg leading-relaxed">
+                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 z-20 w-max max-w-[180px] pointer-events-none">
+                  <div className="bg-[#252528]/60 backdrop-blur-md border border-border/60 rounded-lg px-2.5 py-2 text-xs text-center text-foreground shadow-lg leading-relaxed">
                     {memo}
                   </div>
                   <div
