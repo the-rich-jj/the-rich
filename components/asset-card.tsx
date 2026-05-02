@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Card, CardContent } from "@/components/ui/card"
 
 interface AssetCardProps {
@@ -45,6 +45,13 @@ export function AssetCard({
   }
 
   const tipLeft = Math.max(6, Math.min(percentage, 88))
+
+  useEffect(() => {
+    if (openMemo === null) return
+    const close = () => setOpenMemo(null)
+    document.addEventListener("click", close)
+    return () => document.removeEventListener("click", close)
+  }, [openMemo])
 
   const toggleMemo = (key: MemoKey, hasMemo: boolean) => {
     if (!hasMemo) return
@@ -142,7 +149,7 @@ export function AssetCard({
                 </div>
               )}
               <button
-                onClick={() => toggleMemo(key, !!memo)}
+                onClick={(e: { stopPropagation: () => void }) => { e.stopPropagation(); toggleMemo(key, !!memo) }}
                 className={`w-full rounded-lg p-1.5 text-center transition-opacity ${memo ? "cursor-pointer active:opacity-70" : "cursor-default"}`}
                 style={{ backgroundColor: bgColor }}
               >

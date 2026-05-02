@@ -165,10 +165,15 @@ const categories = ["전체", "원자재", "에너지", "암호화폐", "주식"
 
 export default function DashboardPage() {
   const [activeCategory, setActiveCategory] = useState("전체")
+  const [searchQuery, setSearchQuery] = useState("")
 
-  const filteredAssets = activeCategory === "전체"
-    ? assetsData
-    : assetsData.filter((asset) => asset.category === activeCategory)
+  const filteredAssets = assetsData
+    .filter((asset) => activeCategory === "전체" || asset.category === activeCategory)
+    .filter((asset) => {
+      const q = searchQuery.trim().toLowerCase()
+      if (!q) return true
+      return asset.name.toLowerCase().includes(q) || asset.symbol.toLowerCase().includes(q)
+    })
 
   return (
     <div className="min-h-screen bg-background pb-8">
@@ -176,6 +181,8 @@ export default function DashboardPage() {
         categories={categories}
         activeCategory={activeCategory}
         onCategoryChange={setActiveCategory}
+        searchQuery={searchQuery}
+        onSearchChange={setSearchQuery}
       />
 
       <main className="px-4 py-4">

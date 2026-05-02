@@ -1,13 +1,16 @@
 "use client"
+import { Search } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 interface DashboardHeaderProps {
   categories: string[]
   activeCategory: string
   onCategoryChange: (category: string) => void
+  searchQuery: string
+  onSearchChange: (query: string) => void
 }
 
-export function DashboardHeader({ categories, activeCategory, onCategoryChange }: DashboardHeaderProps) {
+export function DashboardHeader({ categories, activeCategory, onCategoryChange, searchQuery, onSearchChange }: DashboardHeaderProps) {
   return (
     <header className="sticky top-0 z-50 bg-background/80 backdrop-blur-lg border-b border-border/50 px-4 py-4">
       <div className="flex items-center justify-between mb-3">
@@ -17,6 +20,18 @@ export function DashboardHeader({ categories, activeCategory, onCategoryChange }
         </div>
       </div>
 
+      {/* Search */}
+      <div className="relative mb-3">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+        <input
+          type="text"
+          placeholder="종목 검색..."
+          value={searchQuery}
+          onChange={(e) => onSearchChange(e.target.value)}
+          className="w-full bg-muted/50 border border-border/50 rounded-full pl-9 pr-4 py-2 text-sm text-foreground placeholder:text-muted-foreground outline-none focus:border-border/80 transition-colors"
+        />
+      </div>
+
       {/* Category Tabs */}
       <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-1">
         {categories.map((category) => (
@@ -24,19 +39,13 @@ export function DashboardHeader({ categories, activeCategory, onCategoryChange }
             key={category}
             onClick={() => onCategoryChange(category)}
             className={cn(
-              "relative overflow-hidden px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap",
+              "px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-colors duration-150",
               activeCategory === category
-                ? "text-black"
-                : "bg-muted text-muted-foreground hover:bg-muted/80 transition-colors duration-200"
+                ? "bg-white text-black"
+                : "bg-muted text-muted-foreground hover:bg-muted/80"
             )}
           >
-            {activeCategory === category && (
-              <span
-                key={`fill-${category}`}
-                className="absolute inset-0 rounded-full bg-white origin-left animate-[tab-fill_0.25s_ease-out_forwards]"
-              />
-            )}
-            <span className="relative z-10">{category}</span>
+            {category}
           </button>
         ))}
       </div>
