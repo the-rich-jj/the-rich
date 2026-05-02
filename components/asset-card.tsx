@@ -225,7 +225,7 @@ export function AssetCard({
       <Dialog open={openModal !== null} onOpenChange={open => { if (!open) setOpenModal(null) }}>
         <DialogContent
           className="bg-[#1A1A1E] border-border/50 w-[calc(100%-2rem)] max-w-sm"
-          style={{ position: 'fixed', top: '5%', left: '50%', transform: 'translateX(-50%)', bottom: 'auto' }}
+          style={{ top: '5%', translate: '-50% 0' }}
         >
           <DialogHeader>
             <DialogTitle className="text-base text-foreground">
