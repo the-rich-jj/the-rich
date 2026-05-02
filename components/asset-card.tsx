@@ -83,11 +83,24 @@ export function AssetCard({
 
   const activeBox = priceBoxes.find(b => b.key === (openModal ?? openTooltip))
 
+  const lockScroll = () => {
+    const y = window.scrollY
+    document.body.style.cssText = `position:fixed;top:-${y}px;left:0;right:0;`
+    document.body.dataset.scrollY = String(y)
+  }
+
+  const unlockScroll = () => {
+    const y = parseInt(document.body.dataset.scrollY ?? '0')
+    document.body.style.cssText = ''
+    window.scrollTo(0, y)
+  }
+
   const openEditModal = (box: typeof priceBoxes[0]) => {
     setDraftPrice(local[box.priceKey])
     setDraftMemo(local[box.memoKey])
     setOpenTooltip(null)
     setOpenModal(box.key)
+    lockScroll()
   }
 
   const handleSave = async () => {
@@ -99,6 +112,7 @@ export function AssetCard({
       [activeBox.memoKey]: draftMemo.trim(),
     }))
     setOpenModal(null)
+    unlockScroll()
     await Promise.all([
       fetch('/api/update-price', {
         method: 'POST',
@@ -222,7 +236,7 @@ export function AssetCard({
       </Card>
 
       {/* Edit Modal */}
-      <Dialog open={openModal !== null} onOpenChange={open => { if (!open) setOpenModal(null) }}>
+      <Dialog open={openModal !== null} onOpenChange={open => { if (!open) { setOpenModal(null); unlockScroll() } }}>
         <DialogContent
           className="bg-[#1A1A1E] border-border/50 w-[calc(100%-2rem)] max-w-sm"
           style={{ top: '5%', translate: '-50% 0' }}
