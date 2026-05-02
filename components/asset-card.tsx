@@ -37,8 +37,8 @@ export function AssetCard({
   const tipLeft = Math.max(6, Math.min(percentage, 88))
 
   return (
-    <Card className="border-border/50 bg-card/80 backdrop-blur-sm">
-      <CardContent className="px-3 py-2">
+    <Card className="border-border/50 bg-card/80 backdrop-blur-sm py-3">
+      <CardContent className="px-3">
         {/* Header */}
         <div className="flex items-center gap-2 mb-2">
           <div
