@@ -76,9 +76,9 @@ export function AssetCard({
     textClass: string
     tooltipAlign: string
   }> = [
-    { key: "second", label: "2차 매수가", priceKey: "secondBuyPrice", memoKey: "secondBuyMemo", bgColor: "#252528", textClass: "text-foreground", tooltipAlign: "left-0 translate-x-0" },
+    { key: "second", label: "2차 매수가", priceKey: "secondBuyPrice", memoKey: "secondBuyMemo", bgColor: "#252528", textClass: "text-foreground", tooltipAlign: "left-0" },
     { key: "third",  label: "3차 매수가", priceKey: "thirdBuyPrice",  memoKey: "thirdBuyMemo",  bgColor: "#252528", textClass: "text-foreground", tooltipAlign: "left-1/2 -translate-x-1/2" },
-    { key: "profit", label: "익절가",     priceKey: "takeProfitPrice", memoKey: "takeProfitMemo", bgColor: "#1E2820", textClass: "text-primary",  tooltipAlign: "right-0 left-auto translate-x-0" },
+    { key: "profit", label: "익절가",     priceKey: "takeProfitPrice", memoKey: "takeProfitMemo", bgColor: "#1E2820", textClass: "text-primary",  tooltipAlign: "right-0 left-auto" },
   ]
 
   const activeBox = priceBoxes.find(b => b.key === (openModal ?? openTooltip))
@@ -176,7 +176,7 @@ export function AssetCard({
                   {/* Tooltip */}
                   {openTooltip === box.key && (
                     <div
-                      className={`absolute bottom-full mb-1.5 z-20 w-56 ${box.tooltipAlign}`}
+                      className={`absolute bottom-full mb-1.5 z-20 w-max max-w-[220px] ${box.tooltipAlign}`}
                       onClick={(e: { stopPropagation: () => void }) => e.stopPropagation()}
                     >
                       <div className="bg-[#252528]/60 backdrop-blur-md border border-border/60 rounded-lg px-2.5 py-2 shadow-lg">
@@ -223,7 +223,10 @@ export function AssetCard({
 
       {/* Edit Modal */}
       <Dialog open={openModal !== null} onOpenChange={open => { if (!open) setOpenModal(null) }}>
-        <DialogContent className="bg-[#1A1A1E] border-border/50 max-w-sm top-[6%] translate-y-0">
+        <DialogContent
+          className="bg-[#1A1A1E] border-border/50 w-[calc(100%-2rem)] max-w-sm"
+          style={{ position: 'fixed', top: '5%', left: '50%', transform: 'translateX(-50%)', bottom: 'auto' }}
+        >
           <DialogHeader>
             <DialogTitle className="text-base text-foreground">
               {name} · {activeBox?.label}
