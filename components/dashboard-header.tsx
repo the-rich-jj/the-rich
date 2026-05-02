@@ -12,7 +12,7 @@ interface DashboardHeaderProps {
 
 export function DashboardHeader({ categories, activeCategory, onCategoryChange, searchQuery, onSearchChange }: DashboardHeaderProps) {
   return (
-    <header className="sticky top-0 z-50 bg-background/80 backdrop-blur-lg border-b border-border/50 px-4 py-3">
+    <header className="sticky top-0 z-50 bg-background/80 backdrop-blur-lg border-b border-border/50 px-4 pb-3 pt-[30px]">
       {/* Category Tabs */}
       <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-3">
         {categories.map((category) => (
