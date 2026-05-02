@@ -1,11 +1,12 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Card, CardContent } from "@/components/ui/card"
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
 } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
+import { Pencil } from "lucide-react"
 
 interface AssetCardProps {
   name: string
@@ -43,6 +44,7 @@ export function AssetCard({
   const [local, setLocal] = useState({
     secondBuyPrice, secondBuyMemo, thirdBuyPrice, thirdBuyMemo, takeProfitPrice, takeProfitMemo,
   })
+  const [openTooltip, setOpenTooltip] = useState<MemoKey | null>(null)
   const [openModal, setOpenModal] = useState<MemoKey | null>(null)
   const [draftPrice, setDraftPrice] = useState('')
   const [draftMemo, setDraftMemo] = useState('')
@@ -58,6 +60,13 @@ export function AssetCard({
 
   const tipLeft = Math.max(6, Math.min(percentage, 92))
 
+  useEffect(() => {
+    if (openTooltip === null) return
+    const close = () => setOpenTooltip(null)
+    document.addEventListener("click", close)
+    return () => document.removeEventListener("click", close)
+  }, [openTooltip])
+
   const priceBoxes: Array<{
     key: MemoKey
     label: string
@@ -71,36 +80,36 @@ export function AssetCard({
     { key: "profit", label: "익절가",     priceKey: "takeProfitPrice", memoKey: "takeProfitMemo", bgColor: "#1E2820", textClass: "text-primary" },
   ]
 
-  const activeBox = priceBoxes.find(b => b.key === openModal)
+  const activeBox = priceBoxes.find(b => b.key === (openModal ?? openTooltip))
 
-  const openFor = (box: typeof priceBoxes[0]) => {
+  const openEditModal = (box: typeof priceBoxes[0]) => {
     setDraftPrice(local[box.priceKey])
     setDraftMemo(local[box.memoKey])
+    setOpenTooltip(null)
     setOpenModal(box.key)
   }
 
   const handleSave = async () => {
     if (!openModal || !activeBox) return
     setSaving(true)
-    const updates = [
-      { field: activeBox.priceKey, value: draftPrice.trim() },
-      { field: activeBox.memoKey,  value: draftMemo.trim() },
-    ]
     setLocal(prev => ({
       ...prev,
       [activeBox.priceKey]: draftPrice.trim(),
       [activeBox.memoKey]: draftMemo.trim(),
     }))
     setOpenModal(null)
-    await Promise.all(
-      updates.map(({ field, value }) =>
-        fetch('/api/update-price', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ name, field, value }),
-        }).catch(() => {})
-      )
-    )
+    await Promise.all([
+      fetch('/api/update-price', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, field: activeBox.priceKey, value: draftPrice.trim() }),
+      }).catch(() => {}),
+      fetch('/api/update-price', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, field: activeBox.memoKey, value: draftMemo.trim() }),
+      }).catch(() => {}),
+    ])
     setSaving(false)
   }
 
@@ -159,19 +168,54 @@ export function AssetCard({
 
           {/* Price Targets */}
           <div className="grid grid-cols-3 gap-1.5">
-            {priceBoxes.map(box => (
-              <button
-                key={box.key}
-                onClick={() => openFor(box)}
-                className="rounded-lg p-1.5 text-center active:opacity-70"
-                style={{ backgroundColor: box.bgColor }}
-              >
-                <p className="text-xs text-muted-foreground mb-0.5">{box.label}</p>
-                <p className={`text-xs font-medium ${box.textClass}`}>
-                  {fmtPrice(local[box.priceKey]) || "-"}
-                </p>
-              </button>
-            ))}
+            {priceBoxes.map(box => {
+              const memo = local[box.memoKey]
+              return (
+                <div key={box.key} className="relative">
+                  {/* Tooltip */}
+                  {openTooltip === box.key && (
+                    <div
+                      className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 z-20 w-max max-w-[180px]"
+                      onClick={(e: { stopPropagation: () => void }) => e.stopPropagation()}
+                    >
+                      <div className="bg-[#252528]/60 backdrop-blur-md border border-border/60 rounded-lg px-2.5 py-2 shadow-lg">
+                        <div className="flex items-start justify-between gap-2">
+                          <p className="text-xs text-foreground leading-relaxed flex-1">
+                            {memo || <span className="text-muted-foreground/50">메모 없음</span>}
+                          </p>
+                          <button
+                            onClick={(e: { stopPropagation: () => void }) => { e.stopPropagation(); openEditModal(box) }}
+                            className="flex-shrink-0 mt-0.5 opacity-60 active:opacity-100"
+                          >
+                            <Pencil className="w-3 h-3 text-muted-foreground" />
+                          </button>
+                        </div>
+                      </div>
+                      <div className="mx-auto w-0 h-0" style={{
+                        borderLeft: "5px solid transparent",
+                        borderRight: "5px solid transparent",
+                        borderTop: "5px solid hsl(var(--border) / 0.6)",
+                      }} />
+                    </div>
+                  )}
+
+                  {/* Price Box */}
+                  <button
+                    onClick={(e: { stopPropagation: () => void }) => {
+                      e.stopPropagation()
+                      setOpenTooltip(prev => prev === box.key ? null : box.key)
+                    }}
+                    className="w-full rounded-lg p-1.5 text-center active:opacity-70"
+                    style={{ backgroundColor: box.bgColor }}
+                  >
+                    <p className="text-xs text-muted-foreground mb-0.5">{box.label}</p>
+                    <p className={`text-xs font-medium ${box.textClass}`}>
+                      {fmtPrice(local[box.priceKey]) || "-"}
+                    </p>
+                  </button>
+                </div>
+              )
+            })}
           </div>
         </CardContent>
       </Card>
@@ -192,7 +236,8 @@ export function AssetCard({
                 value={draftPrice}
                 onChange={e => setDraftPrice(e.target.value)}
                 onKeyDown={e => { if (e.key === 'Enter') handleSave() }}
-                className="w-full rounded-lg bg-[#252528] border border-border/40 px-3 py-2 text-sm text-foreground outline-none focus:border-border"
+                style={{ fontSize: '16px' }}
+                className="w-full rounded-lg bg-[#252528] border border-border/40 px-3 py-2 text-foreground outline-none focus:border-border"
                 placeholder="예: 210000"
               />
             </div>
@@ -203,26 +248,18 @@ export function AssetCard({
                 value={draftMemo}
                 onChange={e => setDraftMemo(e.target.value)}
                 rows={4}
-                className="w-full rounded-lg bg-[#252528] border border-border/40 px-3 py-2 text-sm text-foreground outline-none focus:border-border resize-none leading-relaxed"
+                style={{ fontSize: '16px' }}
+                className="w-full rounded-lg bg-[#252528] border border-border/40 px-3 py-2 text-foreground outline-none focus:border-border resize-none leading-relaxed"
                 placeholder="매수/익절 근거를 적어보세요"
               />
             </div>
           </div>
 
           <DialogFooter className="gap-2">
-            <Button
-              variant="ghost"
-              onClick={() => setOpenModal(null)}
-              className="flex-1 text-muted-foreground"
-            >
+            <Button variant="ghost" onClick={() => setOpenModal(null)} className="flex-1 text-muted-foreground">
               취소
             </Button>
-            <Button
-              onClick={handleSave}
-              disabled={saving}
-              className="flex-1"
-              style={{ backgroundColor: color }}
-            >
+            <Button onClick={handleSave} disabled={saving} className="flex-1" style={{ backgroundColor: color }}>
               저장
             </Button>
           </DialogFooter>
