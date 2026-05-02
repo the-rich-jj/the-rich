@@ -1,12 +1,14 @@
 import { google } from 'googleapis'
 
-function getAuth() {
+function getAuth(write = false) {
   const credentials = JSON.parse(
     Buffer.from(process.env.GOOGLE_SERVICE_ACCOUNT_BASE64!, 'base64').toString('utf-8')
   )
   return new google.auth.GoogleAuth({
     credentials,
-    scopes: ['https://www.googleapis.com/auth/spreadsheets.readonly'],
+    scopes: [write
+      ? 'https://www.googleapis.com/auth/spreadsheets'
+      : 'https://www.googleapis.com/auth/spreadsheets.readonly'],
   })
 }
 
@@ -14,14 +16,6 @@ function parseKRW(s: string): number {
   const clean = (s ?? '').trim().replace(/[₩\s,]/g, '')
   if (clean.startsWith('(') && clean.endsWith(')')) return -(parseFloat(clean.slice(1, -1)) || 0)
   return parseFloat(clean) || 0
-}
-
-function fmtPrice(s: string): string {
-  const n = parseFloat((s ?? '').replace(/,/g, ''))
-  if (!n) return ''
-  if (n >= 100000000) return `${(n / 100000000).toFixed(1)}억`
-  if (n >= 10000) return `${Math.round(n / 10000)}만`
-  return n.toLocaleString()
 }
 
 export type DomesticAsset = {
@@ -71,14 +65,58 @@ export async function fetchAssetData(): Promise<{
     const name = r[0]
     if (!name) continue
     prices[name] = {
-      secondBuyPrice: fmtPrice(r[1] ?? ''),
+      secondBuyPrice: r[1] ?? '',
       secondBuyMemo: r[2] ?? '',
-      thirdBuyPrice: fmtPrice(r[3] ?? ''),
+      thirdBuyPrice: r[3] ?? '',
       thirdBuyMemo: r[4] ?? '',
-      takeProfitPrice: fmtPrice(r[5] ?? ''),
+      takeProfitPrice: r[5] ?? '',
       takeProfitMemo: r[6] ?? '',
     }
   }
 
   return { domestic, us, prices }
+}
+
+const FIELD_TO_COL: Record<string, number> = {
+  secondBuyPrice: 1,
+  secondBuyMemo: 2,
+  thirdBuyPrice: 3,
+  thirdBuyMemo: 4,
+  takeProfitPrice: 5,
+  takeProfitMemo: 6,
+}
+
+export async function updatePriceCell(name: string, field: string, value: string) {
+  const colIdx = FIELD_TO_COL[field]
+  if (colIdx === undefined) throw new Error(`Unknown field: ${field}`)
+
+  const auth = getAuth(true)
+  const sheets = google.sheets({ version: 'v4', auth })
+  const id = process.env.GOOGLE_SPREADSHEET_ID!
+
+  const res = await sheets.spreadsheets.values.get({ spreadsheetId: id, range: '매매가관리!A2:A30' })
+  const rows = res.data.values ?? []
+  const rowIndex = rows.findIndex(r => r[0] === name)
+
+  const colLetter = String.fromCharCode(65 + colIdx)
+
+  if (rowIndex === -1) {
+    const newRow = new Array(7).fill('')
+    newRow[0] = name
+    newRow[colIdx] = value
+    await sheets.spreadsheets.values.append({
+      spreadsheetId: id,
+      range: '매매가관리!A:G',
+      valueInputOption: 'RAW',
+      requestBody: { values: [newRow] },
+    })
+  } else {
+    const row = rowIndex + 2
+    await sheets.spreadsheets.values.update({
+      spreadsheetId: id,
+      range: `매매가관리!${colLetter}${row}`,
+      valueInputOption: 'RAW',
+      requestBody: { values: [[value]] },
+    })
+  }
 }
