@@ -107,16 +107,17 @@ function buildUsAssets(assets: UsAsset[], prices: Record<string, PriceData>, sta
   })
 }
 
-const categories = ['전체', '원자재', '암호화폐', '미국주식', '국내주식']
+const categories = ['전체', '원자재', '미국주식', '국내주식', '암호화폐']
 
 interface Props {
   domesticAssets: DomesticAsset[]
   usAssets: UsAsset[]
   prices: Record<string, PriceData>
   domesticStocks: DomesticStock[]
+  totalEvalAmount: number
 }
 
-export function DashboardClient({ domesticAssets, usAssets, prices, domesticStocks }: Props) {
+export function DashboardClient({ domesticAssets, usAssets, prices, domesticStocks, totalEvalAmount }: Props) {
   const [activeCategory, setActiveCategory] = useState('전체')
   const [searchQuery, setSearchQuery] = useState('')
   const [tierTargets, setTierTargets] = useState<Record<string, number>>({
@@ -137,7 +138,6 @@ export function DashboardClient({ domesticAssets, usAssets, prices, domesticStoc
     })
 
   // 국내주식 tier 집계
-  const totalEval = domesticStocks.reduce((sum, s) => sum + s.evalAmount, 0)
   const tierGroups = domesticStocks.reduce((acc, s) => {
     if (!acc[s.tier]) acc[s.tier] = { count: 0, heldRatio: 0 }
     acc[s.tier].count++
@@ -169,7 +169,7 @@ export function DashboardClient({ domesticAssets, usAssets, prices, domesticStoc
                   stockCount={group.count}
                   heldRatio={group.heldRatio}
                   targetRatio={tierTargets[tier]}
-                  totalEvalAmount={totalEval}
+                  totalEvalAmount={totalEvalAmount}
                   onTargetChange={v => setTierTargets(prev => ({ ...prev, [tier]: v }))}
                 />
               )

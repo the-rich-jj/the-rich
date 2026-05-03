@@ -48,38 +48,11 @@ export function DomesticStockCard({
   return (
     <Card className="border-border/50 py-3 bg-[#1A1A1E]">
       <CardContent className="px-3">
-        {/* Header */}
-        <div className="flex items-center justify-between mb-0">
-          <div className="flex items-center gap-2">
-            <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: color }} />
-            <h3 className="font-semibold text-sm text-foreground">{label}</h3>
-            <span className="text-xs text-muted-foreground">{stockCount}종목</span>
-          </div>
-
-          {editing ? (
-            <div className="flex items-center gap-1">
-              <input
-                type="number"
-                value={draft}
-                onChange={e => setDraft(e.target.value)}
-                onBlur={commitEdit}
-                onKeyDown={e => { if (e.key === 'Enter') commitEdit() }}
-                autoFocus
-                style={{ fontSize: '16px' }}
-                className="w-14 text-right rounded bg-[#252528] border border-border/40 px-1.5 py-0.5 text-foreground outline-none"
-              />
-              <span className="text-xs text-muted-foreground">%</span>
-            </div>
-          ) : (
-            <button
-              onClick={() => { setDraft(String(targetRatio)); setEditing(true) }}
-              className="flex items-center gap-1.5 rounded-md px-2 py-0.5 active:opacity-60"
-              style={{ backgroundColor: `${color}20` }}
-            >
-              <span className="text-xs font-semibold" style={{ color }}>목표 {targetRatio}%</span>
-              <Pencil className="w-2.5 h-2.5" style={{ color }} />
-            </button>
-          )}
+        {/* Header — tier name + stock count only */}
+        <div className="flex items-center gap-2 mb-0">
+          <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: color }} />
+          <h3 className="font-semibold text-sm text-foreground">{label}</h3>
+          <span className="text-xs text-muted-foreground">{stockCount}종목</span>
         </div>
 
         {/* Progress Bar */}
@@ -119,10 +92,39 @@ export function DomesticStockCard({
           </div>
         </div>
 
-        {/* Per-stock target */}
-        <div className="rounded-lg px-3 py-2 text-center bg-[#252528]">
-          <p className="text-xs text-muted-foreground mb-0.5">1종목당 목표</p>
-          <p className="text-sm font-semibold text-foreground">{fmt(perStockTarget)}</p>
+        {/* Bottom row: per-stock target + editable target ratio — same line */}
+        <div className="grid grid-cols-2 gap-1.5">
+          <div className="rounded-lg px-3 py-2 bg-[#252528]">
+            <p className="text-xs text-muted-foreground mb-0.5">1종목당 목표</p>
+            <p className="text-sm font-semibold text-foreground">{fmt(perStockTarget)}</p>
+          </div>
+
+          <div className="rounded-lg px-3 py-2 bg-[#252528]">
+            <p className="text-xs text-muted-foreground mb-0.5">목표 비중</p>
+            {editing ? (
+              <div className="flex items-center gap-1">
+                <input
+                  type="number"
+                  value={draft}
+                  onChange={e => setDraft(e.target.value)}
+                  onBlur={commitEdit}
+                  onKeyDown={e => { if (e.key === 'Enter') commitEdit() }}
+                  autoFocus
+                  style={{ fontSize: '16px' }}
+                  className="w-14 rounded bg-[#1A1A1E] border border-border/40 px-1.5 py-0.5 text-foreground outline-none"
+                />
+                <span className="text-xs text-muted-foreground">%</span>
+              </div>
+            ) : (
+              <button
+                onClick={() => { setDraft(String(targetRatio)); setEditing(true) }}
+                className="flex items-center gap-1.5 active:opacity-60"
+              >
+                <span className="text-sm font-semibold" style={{ color }}>{targetRatio}%</span>
+                <Pencil className="w-3 h-3 text-muted-foreground" />
+              </button>
+            )}
+          </div>
         </div>
       </CardContent>
     </Card>

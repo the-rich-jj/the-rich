@@ -53,16 +53,18 @@ export async function fetchAssetData(): Promise<{
   us: UsAsset[]
   prices: Record<string, PriceData>
   domesticStocks: DomesticStock[]
+  totalEvalAmount: number
 }> {
   const auth = getAuth()
   const sheets = google.sheets({ version: 'v4', auth })
   const id = process.env.GOOGLE_SPREADSHEET_ID!
 
-  const [domesticRes, usRes, priceRes, dsRes] = await Promise.all([
+  const [domesticRes, usRes, priceRes, dsRes, totalRes] = await Promise.all([
     sheets.spreadsheets.values.get({ spreadsheetId: id, range: '자산현황!A4:F9' }),
     sheets.spreadsheets.values.get({ spreadsheetId: id, range: '비중관리(미국)!B3:H20' }),
     sheets.spreadsheets.values.get({ spreadsheetId: id, range: '매매가관리!A2:G30' }),
     sheets.spreadsheets.values.get({ spreadsheetId: id, range: '주식(국내)!A2:I100' }),
+    sheets.spreadsheets.values.get({ spreadsheetId: id, range: '자산현황!E2' }),
   ])
 
   const domestic: DomesticAsset[] = (domesticRes.data.values ?? [])
@@ -106,7 +108,9 @@ export async function fetchAssetData(): Promise<{
     }))
     .filter(s => ['1', '2', '3'].includes(s.tier))
 
-  return { domestic, us, prices, domesticStocks }
+  const totalEvalAmount = parseKRW((totalRes.data.values ?? [])[0]?.[0] ?? '')
+
+  return { domestic, us, prices, domesticStocks, totalEvalAmount }
 }
 
 const FIELD_TO_COL: Record<string, number> = {

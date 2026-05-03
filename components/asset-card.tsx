@@ -100,23 +100,23 @@ export function AssetCard({
     }
   }, [openModal])
 
-  // visualViewport로 키보드 바로 위에 고정
+  // window.innerHeight는 iOS Safari에서 키보드 열리면 감소 → 시트를 바로 위에 고정
   useEffect(() => {
     if (openModal === null) return
-    const vv = window.visualViewport
-    if (!vv) return
     const update = () => {
       if (!sheetRef.current) return
-      const offset = Math.max(0, window.innerHeight - vv.height - vv.offsetTop)
-      sheetRef.current.style.transform = `translateY(${-offset}px)`
+      const h = sheetRef.current.offsetHeight
+      sheetRef.current.style.top = `${window.innerHeight - h}px`
+      sheetRef.current.style.bottom = 'auto'
     }
     update()
-    vv.addEventListener('resize', update)
-    vv.addEventListener('scroll', update)
+    window.addEventListener('resize', update)
     return () => {
-      vv.removeEventListener('resize', update)
-      vv.removeEventListener('scroll', update)
-      if (sheetRef.current) sheetRef.current.style.transform = ''
+      window.removeEventListener('resize', update)
+      if (sheetRef.current) {
+        sheetRef.current.style.top = ''
+        sheetRef.current.style.bottom = ''
+      }
     }
   }, [openModal])
 
