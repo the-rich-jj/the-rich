@@ -243,8 +243,8 @@ export function AssetCard({
       {/* Edit Modal */}
       <Dialog open={openModal !== null} onOpenChange={open => { if (!open) setOpenModal(null) }}>
         <DialogContent
-          className="bg-[#1A1A1E] border-border/50 w-[calc(100%-2rem)] max-w-sm"
-          style={{ top: '5%', translate: '-50% 0' }}
+          className="bg-[#1A1A1E] border-border/50 w-[calc(100%-4rem)] max-w-sm overflow-y-auto"
+          style={{ top: '5%', translate: '-50% 0', maxHeight: '85dvh' }}
         >
           <DialogHeader>
             <DialogTitle className="text-base text-foreground">
@@ -278,11 +278,8 @@ export function AssetCard({
             </div>
           </div>
 
-          <DialogFooter className="gap-2">
-            <Button variant="ghost" onClick={() => setOpenModal(null)} className="flex-1 text-muted-foreground">
-              취소
-            </Button>
-            <Button onClick={handleSave} disabled={saving} className="flex-1" style={{ backgroundColor: color }}>
+          <DialogFooter>
+            <Button onClick={handleSave} disabled={saving} className="w-full" style={{ backgroundColor: color }}>
               저장
             </Button>
           </DialogFooter>
