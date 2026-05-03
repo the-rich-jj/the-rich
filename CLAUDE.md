@@ -32,13 +32,26 @@ GOOGLE_SPREADSHEET_ID           # 스프레드시트 ID: 1r_HrWM_i7pwNV_F_q1pFL1
 |------|------|------|
 | `자산현황` | `A4:F9` | 원자재 자산 (A=종목, B=보유액, E=목표액, F=이동금액) |
 | `자산현황` | `E2` | **전체 포트폴리오 평가금** (국내주식 1종목당 목표 산정 기준) |
-| `비중관리(미국)` | `B3:H20` | 미국주식 (B=종목, C=티커, D=보유액, G=목표액, H=이동금액) |
+| `자산현황` | `H1:J1` | 티어 1/2/3 목표비중 (공유 저장, API로 쓰기) |
+| `비중관리(미국)` | `B3:I20` | 미국주식 (B=종목, C=티커, D=보유액, G=목표액, H=이동금액, **I=현재가 KRW**) |
 | `매매가관리` | `A2:G30` | 매수가/익절가 (A=종목, B=2차매수가, C=메모, D=3차매수가, E=메모, F=익절가, G=메모) |
 | `주식(국내)` | `A2:I100` | 국내주식 (A=종목명, C=티어, H=평가금, I=보유비율%) |
-| `자산현황` | `H1:J1` | 티어 1/2/3 목표비중 (공유 저장, API로 쓰기) |
+| `금&은` | `D10:D35` | 원자재 현재가 (D10=금 KRW, D15=은 USD, D25=구리/FCX USD, D35=천연가스/LNG USD) |
+| `현금` | `M1` | 원달러 환율 (KRW, `₩1,471.32` 형식) |
 
 **쓰기:** `매매가관리` 시트에 A열로 종목 찾아 해당 행 B~G열 업데이트  
 **쓰기:** `자산현황!H1:J1` — 티어 목표비중 (updateTierTarget)
+
+### 현재가 계산 방식
+
+```
+parseNum(v) = parseFloat(v.replace(/[₩$\s,]/g, ''))   ← ₩/$/ 공백/쉼표 모두 제거
+
+금          → parseNum(D10)                 KRW 그대로
+은/구리/천연가스 → parseNum(Dxx) × 환율     USD → KRW 환산
+미국주식    → parseNum(I열)                 KRW 그대로 (시트에서 이미 환산됨)
+환율        → parseNum(현금!M1) || 1350
+```
 
 ## 아키텍처 & 핵심 파일
 
@@ -66,15 +79,19 @@ lib/
 
 `ASSET_CONFIG`는 `dashboard-client.tsx`에 정의. 미국주식은 시트 C열 티커 우선(`asset.ticker`), `...config` 이후에 symbol 덮어쓰는 순서 주의.
 
-**전체 탭 렌더링**: 원자재 → 미국주식 → 국내주식(티어카드 3개) → 암호화폐 순서로 모두 표시. 검색어 입력 시 국내주식 티어카드는 숨기고 나머지만 필터링.
+**전체 탭 렌더링**: 원자재 → 미국주식 → 국내주식(티어카드 3개) → 암호화폐 순서로 모두 표시. 검색 시 티어카드도 종목명 기준으로 필터링 포함.
 
 **탭 UX**:
 - 탭 클릭 시 `scrollIntoView({ behavior: 'smooth', inline: 'nearest' })` — 잘린 탭을 온전히 보이게 스크롤
-- 탭 변경 시 `window.scrollTo({ top: 0, behavior: 'smooth' })` — 콘텐츠 맨 위로 이동 (`useEffect([activeCategory])`)
+- 탭 클릭(같은 탭 포함) 시 `window.scrollTo({ top: 0, behavior: 'smooth' })` — 콘텐츠 맨 위로 이동
+
+**PC 레이아웃**: `grid-cols-1 md:grid-cols-2 lg:grid-cols-3`
 
 ## AssetCard (asset-card.tsx)
 
 - 종목별 진행바: `currentAmount / targetAmount * 100%`
+- 헤더: 종목명 + 심볼 · 현재가(KRW) 표시 — `currentPriceKRW` prop
+- 추가금액 옆 구매 가능 수량 자동계산: `+219만 추가 (≈2주)` — `Math.floor(transferAmount / currentPriceKRW)`
 - 가격 박스(2차매수가/3차매수가/익절가) 탭 → 툴팁(메모 미리보기) → 바텀시트 편집
 - **바텀시트 모달**: `position: fixed; bottom: 0` + `window.innerHeight + resize` 리스너로 키보드 바로 위에 위치
   - `body.position = 'fixed'`으로 배경 스크롤 잠금
