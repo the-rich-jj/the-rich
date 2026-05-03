@@ -4,10 +4,10 @@ import { useState } from "react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Pencil } from "lucide-react"
 
-const TIER_CONFIG: Record<string, { label: string; color: string }> = {
-  '1': { label: '1티어', color: '#F5A623' },
-  '2': { label: '2티어', color: '#8B8FA8' },
-  '3': { label: '3티어', color: '#CD7F32' },
+const TIER_CONFIG: Record<string, { label: string; cap: string; color: string }> = {
+  '1': { label: '1티어', cap: '10조이상',  color: '#F5A623' },
+  '2': { label: '2티어', cap: '1조이상',   color: '#8B8FA8' },
+  '3': { label: '3티어', cap: '1조미만',   color: '#CD7F32' },
 }
 
 interface DomesticStockCardProps {
@@ -25,7 +25,7 @@ export function DomesticStockCard({
   const [editing, setEditing] = useState(false)
   const [draft, setDraft] = useState('')
 
-  const { label, color } = TIER_CONFIG[tier] ?? { label: `${tier}티어`, color: '#6B7280' }
+  const { label, cap, color } = TIER_CONFIG[tier] ?? { label: `${tier}티어`, cap: '', color: '#6B7280' }
 
   const pct = targetRatio > 0 ? Math.min((heldRatio / targetRatio) * 100, 100) : 0
   const tipLeft = Math.max(6, Math.min(pct, 92))
@@ -48,10 +48,11 @@ export function DomesticStockCard({
   return (
     <Card className="border-border/50 py-3 bg-[#1A1A1E]">
       <CardContent className="px-3">
-        {/* Header — tier name + stock count only */}
+        {/* Header */}
         <div className="flex items-center gap-2 mb-0">
           <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: color }} />
           <h3 className="font-semibold text-sm text-foreground">{label}</h3>
+          <span className="text-xs text-muted-foreground">{cap}</span>
           <span className="text-xs text-muted-foreground">{stockCount}종목</span>
         </div>
 
