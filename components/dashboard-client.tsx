@@ -120,9 +120,21 @@ interface Props {
 export function DashboardClient({ domesticAssets, usAssets, prices, domesticStocks, totalEvalAmount }: Props) {
   const [activeCategory, setActiveCategory] = useState('전체')
   const [searchQuery, setSearchQuery] = useState('')
-  const [tierTargets, setTierTargets] = useState<Record<string, number>>({
-    '1': 40, '2': 35, '3': 30,
+  const [tierTargets, setTierTargets] = useState<Record<string, number>>(() => {
+    if (typeof window === 'undefined') return { '1': 40, '2': 35, '3': 30 }
+    try {
+      const saved = localStorage.getItem('tierTargets')
+      return saved ? JSON.parse(saved) : { '1': 40, '2': 35, '3': 30 }
+    } catch {
+      return { '1': 40, '2': 35, '3': 30 }
+    }
   })
+
+  const updateTierTarget = (tier: string, v: number) => {
+    const next = { ...tierTargets, [tier]: v }
+    setTierTargets(next)
+    try { localStorage.setItem('tierTargets', JSON.stringify(next)) } catch {}
+  }
 
   const allAssets: AssetData[] = [
     ...buildDomesticAssets(domesticAssets, prices, 1),
@@ -170,7 +182,7 @@ export function DashboardClient({ domesticAssets, usAssets, prices, domesticStoc
                   heldRatio={group.heldRatio}
                   targetRatio={tierTargets[tier]}
                   totalEvalAmount={totalEvalAmount}
-                  onTargetChange={v => setTierTargets(prev => ({ ...prev, [tier]: v }))}
+                  onTargetChange={v => updateTierTarget(tier, v)}
                 />
               )
             })
