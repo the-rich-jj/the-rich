@@ -84,7 +84,7 @@ export function DomesticStockCard({
         <div className="flex items-center gap-2 mb-0">
           <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: color }} />
           <h3 className="font-semibold text-sm text-foreground">{label}</h3>
-          <span className="text-xs text-muted-foreground">· {cap} · {stockCount}종목</span>
+          <span className="text-xs text-muted-foreground">· {cap}</span>
         </div>
 
         {/* Progress Bar */}
@@ -124,8 +124,8 @@ export function DomesticStockCard({
           </div>
         </div>
 
-        {/* Bottom row: per-stock target + editable target ratio — same line */}
-        <div className="grid grid-cols-2 gap-1.5">
+        {/* Bottom row: per-stock target + editable target ratio + 종목 리스트 */}
+        <div className="grid grid-cols-3 gap-1.5">
           <div className="rounded-lg px-3 py-2 bg-[#252528]">
             <p className="text-xs text-muted-foreground mb-0.5">1종목당 목표</p>
             <p className="text-sm font-semibold text-foreground">{fmt(perStockTarget)}</p>
@@ -159,13 +159,13 @@ export function DomesticStockCard({
           </div>
         </div>
 
-        {/* 종목 리스트 버튼 */}
-        <button
-          onClick={() => setShowList(true)}
-          className="mt-2 w-full rounded-lg py-2 text-xs font-medium bg-[#252528] text-muted-foreground active:opacity-60"
-        >
-          종목 리스트 ({stockCount})
-        </button>
+          <button
+            onClick={() => setShowList(true)}
+            className="rounded-lg px-3 py-2 bg-[#252528] text-left active:opacity-60"
+          >
+            <p className="text-xs text-muted-foreground mb-0.5">종목 리스트</p>
+            <p className="text-sm font-semibold text-foreground">{stockCount}종목</p>
+          </button>
       </CardContent>
 
       {/* 종목 리스트 바텀시트 */}
