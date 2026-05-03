@@ -63,14 +63,14 @@ export async function fetchAssetData(): Promise<{
   const sheets = google.sheets({ version: 'v4', auth })
   const id = process.env.GOOGLE_SPREADSHEET_ID!
 
-  const [domesticRes, usRes, priceRes, dsRes, totalRes, tierRes, usPriceRes, fxRes] = await Promise.all([
+  const [domesticRes, usRes, priceRes, dsRes, totalRes, tierRes, commodityPriceRes, fxRes] = await Promise.all([
     sheets.spreadsheets.values.get({ spreadsheetId: id, range: '자산현황!A4:F9' }),
-    sheets.spreadsheets.values.get({ spreadsheetId: id, range: '비중관리(미국)!B3:H20' }),
+    sheets.spreadsheets.values.get({ spreadsheetId: id, range: '비중관리(미국)!B3:I20' }),
     sheets.spreadsheets.values.get({ spreadsheetId: id, range: '매매가관리!A2:G30' }),
     sheets.spreadsheets.values.get({ spreadsheetId: id, range: '주식(국내)!A2:I100' }),
     sheets.spreadsheets.values.get({ spreadsheetId: id, range: '자산현황!E2' }),
     sheets.spreadsheets.values.get({ spreadsheetId: id, range: '자산현황!H1:J1' }),
-    sheets.spreadsheets.values.get({ spreadsheetId: id, range: '주식(미국)!A2:E100' }),
+    sheets.spreadsheets.values.get({ spreadsheetId: id, range: '금&은!D10:D30' }),
     sheets.spreadsheets.values.get({ spreadsheetId: id, range: '현금!M1' }),
   ])
 
@@ -78,18 +78,22 @@ export async function fetchAssetData(): Promise<{
     (fxRes.data.values ?? [])[0]?.[0]?.toString().replace(/,/g, '') ?? ''
   ) || 1350
 
-  const usPriceUSD: Record<string, number> = {}
-  for (const r of (usPriceRes.data.values ?? [])) {
-    const name = (r[0] ?? '').toString().trim()
-    if (!name) continue
-    usPriceUSD[name] = parseFloat((r[4] ?? '').toString().replace(/,/g, '')) || 0
+  const parseNum = (v: unknown) => parseFloat(String(v ?? '').replace(/,/g, '')) || 0
+  const cpRows = commodityPriceRes.data.values ?? []
+  // 금&은!D10:D30 → index: D10=0, D15=5, D25=15, D30=20
+  const commodityPriceMap: Record<string, number> = {
+    '금':     parseNum(cpRows[0]?.[0]),                                   // D10: KRW
+    '은':     Math.round(parseNum(cpRows[5]?.[0])  * exchangeRate),       // D15: USD
+    '구리':   Math.round(parseNum(cpRows[15]?.[0]) * exchangeRate),       // D25: USD
+    '천연가스': Math.round(parseNum(cpRows[20]?.[0]) * exchangeRate),     // D30: USD
   }
 
   const domestic: DomesticAsset[] = (domesticRes.data.values ?? [])
     .map(r => {
-      const price = parseFloat((r[3] ?? '').toString().replace(/,/g, ''))
+      const name = (r[0] ?? '') as string
+      const price = commodityPriceMap[name] ?? 0
       return {
-        name: r[0] ?? '',
+        name,
         currentAmount: parseKRW(r[1] ?? ''),
         targetAmount: parseKRW(r[4] ?? ''),
         transferAmount: parseKRW(r[5] ?? ''),
@@ -98,10 +102,11 @@ export async function fetchAssetData(): Promise<{
     })
     .filter(a => a.name)
 
+  // 비중관리(미국) B3:I20 → r[0]=B(name), r[1]=C(ticker), r[2]=D(보유), r[5]=G(목표), r[6]=H(이동), r[7]=I(현재가 USD)
   const us: UsAsset[] = (usRes.data.values ?? [])
     .map(r => {
       const name = (r[0] ?? '') as string
-      const priceUSD = usPriceUSD[name] ?? 0
+      const priceUSD = parseNum(r[7])
       const priceKRW = priceUSD > 0 ? Math.round(priceUSD * exchangeRate) : 0
       return {
         name,
