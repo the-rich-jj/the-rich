@@ -2,9 +2,6 @@
 
 import { useState, useEffect, useRef } from "react"
 import { Card, CardContent } from "@/components/ui/card"
-import {
-  Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
-} from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { Pencil } from "lucide-react"
 
@@ -84,6 +81,7 @@ export function AssetCard({
   const activeBox = priceBoxes.find(b => b.key === (openModal ?? openTooltip))
   const savedScrollY = useRef(0)
 
+  // 모달 열릴 때 배경 스크롤 잠금
   useEffect(() => {
     if (openModal === null) return
     const y = window.scrollY
@@ -102,12 +100,13 @@ export function AssetCard({
   }, [openModal])
 
   const openEditModal = (box: typeof priceBoxes[0]) => {
-    savedScrollY.current = window.scrollY
     setDraftPrice(local[box.priceKey])
     setDraftMemo(local[box.memoKey])
     setOpenTooltip(null)
     setOpenModal(box.key)
   }
+
+  const closeModal = () => setOpenModal(null)
 
   const handleSave = async () => {
     if (!openModal || !activeBox) return
@@ -240,51 +239,58 @@ export function AssetCard({
         </CardContent>
       </Card>
 
-      {/* Edit Modal */}
-      <Dialog open={openModal !== null} onOpenChange={open => { if (!open) setOpenModal(null) }}>
-        <DialogContent
-          className="bg-[#1A1A1E] border-border/50 w-[calc(100%-4rem)] max-w-sm overflow-y-auto"
-          style={{ top: '5%', translate: '-50% 0', maxHeight: '85dvh' }}
-        >
-          <DialogHeader>
-            <DialogTitle className="text-base text-foreground">
-              {name} · {activeBox?.label}
-            </DialogTitle>
-          </DialogHeader>
-
-          <div className="flex flex-col gap-4 py-1">
-            <div className="flex flex-col gap-1.5">
-              <label className="text-xs text-muted-foreground">가격</label>
-              <input
-                value={draftPrice}
-                onChange={e => setDraftPrice(e.target.value)}
-                onKeyDown={e => { if (e.key === 'Enter') handleSave() }}
-                style={{ fontSize: '16px' }}
-                className="w-full rounded-lg bg-[#252528] border border-border/40 px-3 py-2 text-foreground outline-none focus:border-border"
-                placeholder="예: 210000"
-              />
+      {/* Bottom Sheet — position:fixed bottom:0 은 iOS에서 키보드 바로 위에 고정됨 */}
+      {openModal !== null && (
+        <>
+          <div
+            className="fixed inset-0 z-40 bg-black/60"
+            onClick={closeModal}
+          />
+          <div
+            className="fixed bottom-0 left-0 right-0 z-50 rounded-t-2xl bg-[#1A1A1E] border-t border-border/50"
+            style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
+          >
+            <div className="px-4 pt-3 pb-2">
+              <div className="w-10 h-1 rounded-full bg-border/40 mx-auto mb-3" />
+              <p className="text-sm font-semibold text-foreground">
+                {name} · {activeBox?.label}
+              </p>
             </div>
-
-            <div className="flex flex-col gap-1.5">
-              <label className="text-xs text-muted-foreground">메모</label>
-              <textarea
-                value={draftMemo}
-                onChange={e => setDraftMemo(e.target.value)}
-                rows={3}
-                style={{ fontSize: '16px' }}
-                className="w-full rounded-lg bg-[#252528] border border-border/40 px-3 py-2 text-foreground outline-none focus:border-border resize-none leading-relaxed"
-                placeholder="매수/익절 근거를 적어보세요"
-              />
+            <div className="px-4 pb-4 flex flex-col gap-3">
+              <div className="flex flex-col gap-1.5">
+                <label className="text-xs text-muted-foreground">가격</label>
+                <input
+                  value={draftPrice}
+                  onChange={e => setDraftPrice(e.target.value)}
+                  onKeyDown={e => { if (e.key === 'Enter') handleSave() }}
+                  style={{ fontSize: '16px' }}
+                  className="w-full rounded-lg bg-[#252528] border border-border/40 px-3 py-2 text-foreground outline-none focus:border-border"
+                  placeholder="예: 210000"
+                />
+              </div>
+              <div className="flex flex-col gap-1.5">
+                <label className="text-xs text-muted-foreground">메모</label>
+                <textarea
+                  value={draftMemo}
+                  onChange={e => setDraftMemo(e.target.value)}
+                  rows={2}
+                  style={{ fontSize: '16px' }}
+                  className="w-full rounded-lg bg-[#252528] border border-border/40 px-3 py-2 text-foreground outline-none focus:border-border resize-none"
+                  placeholder="매수/익절 근거를 적어보세요"
+                />
+              </div>
+              <Button
+                onClick={handleSave}
+                disabled={saving}
+                className="w-full"
+                style={{ backgroundColor: color }}
+              >
+                저장
+              </Button>
             </div>
           </div>
-
-          <DialogFooter>
-            <Button onClick={handleSave} disabled={saving} className="w-full" style={{ backgroundColor: color }}>
-              저장
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+        </>
+      )}
     </>
   )
 }
