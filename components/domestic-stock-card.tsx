@@ -1,8 +1,8 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect, useRef } from "react"
 import { Card, CardContent } from "@/components/ui/card"
-import { Pencil } from "lucide-react"
+import { Pencil, X } from "lucide-react"
 
 const TIER_CONFIG: Record<string, { label: string; cap: string; color: string }> = {
   '1': { label: '1티어', cap: '10조이상',  color: '#F5A623' },
@@ -16,14 +16,46 @@ interface DomesticStockCardProps {
   heldRatio: number
   targetRatio: number
   totalEvalAmount: number
+  stocks: string[]
   onTargetChange: (v: number) => void
 }
 
 export function DomesticStockCard({
-  tier, stockCount, heldRatio, targetRatio, totalEvalAmount, onTargetChange,
+  tier, stockCount, heldRatio, targetRatio, totalEvalAmount, stocks, onTargetChange,
 }: DomesticStockCardProps) {
   const [editing, setEditing] = useState(false)
   const [draft, setDraft] = useState('')
+  const [showList, setShowList] = useState(false)
+  const sheetRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    if (!showList) return
+    const y = window.scrollY
+    document.body.style.position = 'fixed'
+    document.body.style.top = `-${y}px`
+    document.body.style.width = '100%'
+    document.body.style.overflow = 'hidden'
+    return () => {
+      document.body.style.position = ''
+      document.body.style.top = ''
+      document.body.style.width = ''
+      document.body.style.overflow = ''
+      window.scrollTo(0, y)
+    }
+  }, [showList])
+
+  useEffect(() => {
+    if (!showList) return
+    const update = () => {
+      if (!sheetRef.current) return
+      const h = sheetRef.current.offsetHeight
+      sheetRef.current.style.top = `${window.innerHeight - h}px`
+      sheetRef.current.style.bottom = 'auto'
+    }
+    update()
+    window.addEventListener('resize', update)
+    return () => window.removeEventListener('resize', update)
+  }, [showList])
 
   const { label, cap, color } = TIER_CONFIG[tier] ?? { label: `${tier}티어`, cap: '', color: '#6B7280' }
 
@@ -126,7 +158,63 @@ export function DomesticStockCard({
             )}
           </div>
         </div>
+
+        {/* 종목 리스트 버튼 */}
+        <button
+          onClick={() => setShowList(true)}
+          className="mt-2 w-full rounded-lg py-2 text-xs font-medium bg-[#252528] text-muted-foreground active:opacity-60"
+        >
+          종목 리스트 ({stockCount})
+        </button>
       </CardContent>
+
+      {/* 종목 리스트 바텀시트 */}
+      {showList && (
+        <>
+          <div
+            className="fixed inset-0 bg-black/60 z-40"
+            onClick={() => setShowList(false)}
+          />
+          <div
+            ref={sheetRef}
+            className="fixed left-0 right-0 z-50 bg-[#1A1A1E] rounded-t-2xl"
+            style={{ bottom: 0 }}
+          >
+            {/* handle */}
+            <div className="flex justify-center pt-3 pb-1">
+              <div className="w-10 h-1 rounded-full bg-[#3A3A3E]" />
+            </div>
+            {/* header */}
+            <div className="flex items-center justify-between px-4 py-3 border-b border-border/20">
+              <span className="text-sm font-semibold text-foreground">
+                {label} 종목 리스트
+              </span>
+              <button onClick={() => setShowList(false)} className="text-muted-foreground active:opacity-60">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            {/* list */}
+            <div
+              className="overflow-y-auto px-4 py-2"
+              style={{ maxHeight: '55vh', paddingBottom: 'calc(env(safe-area-inset-bottom) + 12px)' }}
+            >
+              {stocks.length === 0 ? (
+                <p className="text-sm text-muted-foreground py-4 text-center">종목 없음</p>
+              ) : (
+                stocks.map((name, i) => (
+                  <div
+                    key={i}
+                    className="flex items-center gap-2 py-3 border-b border-border/10 last:border-0"
+                  >
+                    <div className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ backgroundColor: color }} />
+                    <span className="text-sm text-foreground">{name}</span>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+        </>
+      )}
     </Card>
   )
 }

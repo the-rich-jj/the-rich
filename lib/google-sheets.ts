@@ -26,6 +26,7 @@ export type DomesticAsset = {
 }
 
 export type DomesticStock = {
+  name: string
   tier: string
   evalAmount: number
   heldRatio: number
@@ -104,6 +105,7 @@ export async function fetchAssetData(): Promise<{
 
   const domesticStocks: DomesticStock[] = (dsRes.data.values ?? [])
     .map(r => ({
+      name: (r[0] ?? '').toString().trim(),
       tier: (r[2] ?? '').toString().trim(),
       evalAmount: parseKRW(r[7] ?? ''),
       heldRatio: parseFloat((r[8] ?? '').toString().replace(/%/g, '').replace(/,/g, '')) || 0,
