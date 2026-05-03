@@ -74,11 +74,8 @@ export async function fetchAssetData(): Promise<{
     sheets.spreadsheets.values.get({ spreadsheetId: id, range: '현금!M1' }),
   ])
 
-  const exchangeRate = parseFloat(
-    (fxRes.data.values ?? [])[0]?.[0]?.toString().replace(/,/g, '') ?? ''
-  ) || 1350
-
   const parseNum = (v: unknown) => parseFloat(String(v ?? '').replace(/[₩$\s,]/g, '')) || 0
+  const exchangeRate = parseNum((fxRes.data.values ?? [])[0]?.[0]) || 1350
   const cpRows = commodityPriceRes.data.values ?? []
   // 금&은!D10:D35 → index: D10=0, D15=5, D25=15, D35=25
   const commodityPriceMap: Record<string, number> = {
