@@ -86,14 +86,18 @@ export function AssetCard({
 
   useEffect(() => {
     if (openModal === null) return
-    const restore = () => window.scrollTo(0, savedScrollY.current)
-    window.addEventListener('scroll', restore)
-    window.visualViewport?.addEventListener('scroll', restore)
-    window.visualViewport?.addEventListener('resize', restore)
+    const y = window.scrollY
+    savedScrollY.current = y
+    document.body.style.position = 'fixed'
+    document.body.style.top = `-${y}px`
+    document.body.style.width = '100%'
+    document.body.style.overflow = 'hidden'
     return () => {
-      window.removeEventListener('scroll', restore)
-      window.visualViewport?.removeEventListener('scroll', restore)
-      window.visualViewport?.removeEventListener('resize', restore)
+      document.body.style.position = ''
+      document.body.style.top = ''
+      document.body.style.width = ''
+      document.body.style.overflow = ''
+      window.scrollTo(0, y)
     }
   }, [openModal])
 

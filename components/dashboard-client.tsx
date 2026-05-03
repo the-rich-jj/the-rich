@@ -30,9 +30,9 @@ type AssetData = {
 
 const ASSET_CONFIG: Record<string, { symbol: string; icon: React.ReactNode; color: string; category: string }> = {
   '금':                                    { symbol: 'GOLD',    icon: <Gem className="w-5 h-5" />,           color: '#F5A623', category: '원자재' },
-  '은':                                    { symbol: 'SLV',     icon: <Coins className="w-5 h-5" />,         color: '#C0C0C0', category: '원자재' },
+  '은':                                    { symbol: 'SLV',     icon: <Coins className="w-5 h-5" />,         color: '#959595', category: '원자재' },
   '구리':                                  { symbol: 'FCX',     icon: <CircleDollarSign className="w-5 h-5" />, color: '#B87333', category: '원자재' },
-  '천연가스':                              { symbol: 'LNG',     icon: <Flame className="w-5 h-5" />,         color: '#FF6B35', category: '에너지' },
+  '천연가스':                              { symbol: 'LNG',     icon: <Flame className="w-5 h-5" />,         color: '#FF6B35', category: '원자재' },
   '비트코인':                              { symbol: 'BTC',     icon: <Bitcoin className="w-5 h-5" />,       color: '#F7931A', category: '암호화폐' },
   '알트코인':                              { symbol: 'ALT',     icon: <Zap className="w-5 h-5" />,           color: '#627EEA', category: '암호화폐' },
   '아마존닷컴':                            { symbol: 'AMZN',   icon: <ShoppingCart className="w-5 h-5" />,  color: '#FF9900', category: '미국주식' },
@@ -91,8 +91,8 @@ function buildUsAssets(assets: UsAsset[], prices: Record<string, PriceData>, sta
     return {
       id: startId + idx,
       name: asset.name,
-      symbol: asset.ticker || asset.name.split(' ')[0].toUpperCase().slice(0, 6),
       ...config,
+      symbol: asset.ticker || asset.name.split(' ')[0].toUpperCase().slice(0, 6),
       currentAmount: asset.currentAmount,
       targetAmount: asset.targetAmount,
       transferAmount: asset.transferAmount,
@@ -106,7 +106,7 @@ function buildUsAssets(assets: UsAsset[], prices: Record<string, PriceData>, sta
   })
 }
 
-const categories = ['전체', '원자재', '에너지', '암호화폐', '미국주식']
+const categories = ['전체', '원자재', '암호화폐', '미국주식']
 
 interface Props {
   domesticAssets: DomesticAsset[]
