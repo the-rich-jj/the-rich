@@ -112,6 +112,15 @@ lib/
 | 종목 리스트 | 버튼 탭 → 바텀시트 (A열 종목명 목록, max-height 55vh, 스크롤) |
 | 목표비중 저장 방식 | 로컬 state + `/api/update-tier-target` POST → Sheets `H1:J1` 쓰기 (전체 공유) |
 
+## 아이콘 & 파비콘
+
+| 파일 | 용도 |
+|------|------|
+| `public/apple-touch-icon.png` | iOS 홈화면 아이콘 (180×180px) |
+| `public/favicon.png` | 브라우저 파비콘 |
+
+`app/layout.tsx` metadata에서 `icons.apple` / `icons.icon` 으로 연결. 아이콘 교체 시 두 파일만 덮어쓰면 됨.
+
 ## 카드 UI 상수
 
 - 카드 배경: `#1A1A1E`
