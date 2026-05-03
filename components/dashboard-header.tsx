@@ -18,7 +18,10 @@ export function DashboardHeader({ categories, activeCategory, onCategoryChange, 
         {categories.map((category) => (
           <button
             key={category}
-            onClick={() => onCategoryChange(category)}
+            onClick={(e) => {
+              e.currentTarget.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'nearest' })
+              onCategoryChange(category)
+            }}
             className={cn(
               "px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-colors duration-150",
               activeCategory === category

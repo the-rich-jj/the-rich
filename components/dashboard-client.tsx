@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { DashboardHeader } from "@/components/dashboard-header"
 import { AssetCard } from "@/components/asset-card"
 import { DomesticStockCard } from "@/components/domestic-stock-card"
@@ -123,6 +123,10 @@ export function DashboardClient({ domesticAssets, usAssets, prices, domesticStoc
   const [searchQuery, setSearchQuery] = useState('')
   const [tierTargets, setTierTargets] = useState<Record<string, number>>(initialTierTargets)
 
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }, [activeCategory])
+
   const updateTierTarget = (tier: string, v: number) => {
     setTierTargets(prev => ({ ...prev, [tier]: v }))
     fetch('/api/update-tier-target', {
@@ -154,7 +158,60 @@ export function DashboardClient({ domesticAssets, usAssets, prices, domesticStoc
     return acc
   }, {} as Record<string, { count: number; heldRatio: number; stocks: string[] }>)
 
-  const isDomesticStock = activeCategory === '국내주식'
+  const renderAssetCards = (assets: AssetData[]) =>
+    assets.map(asset => (
+      <AssetCard
+        key={asset.id}
+        name={asset.name}
+        symbol={asset.symbol}
+        icon={asset.icon}
+        targetAmount={asset.targetAmount}
+        currentAmount={asset.currentAmount}
+        transferAmount={asset.transferAmount}
+        secondBuyPrice={asset.secondBuyPrice}
+        thirdBuyPrice={asset.thirdBuyPrice}
+        takeProfitPrice={asset.takeProfitPrice}
+        secondBuyMemo={asset.secondBuyMemo}
+        thirdBuyMemo={asset.thirdBuyMemo}
+        takeProfitMemo={asset.takeProfitMemo}
+        color={asset.color}
+      />
+    ))
+
+  const tierCards = ['1', '2', '3'].map(tier => {
+    const group = tierGroups[tier]
+    if (!group) return null
+    return (
+      <DomesticStockCard
+        key={tier}
+        tier={tier}
+        stockCount={group.count}
+        heldRatio={group.heldRatio}
+        targetRatio={tierTargets[tier]}
+        totalEvalAmount={totalEvalAmount}
+        stocks={group.stocks}
+        onTargetChange={v => updateTierTarget(tier, v)}
+      />
+    )
+  })
+
+  const renderContent = () => {
+    if (activeCategory === '국내주식') return tierCards
+    if (activeCategory === '전체') {
+      const q = searchQuery.trim().toLowerCase()
+      const searchFilter = (a: AssetData) =>
+        !q || a.name.toLowerCase().includes(q) || a.symbol.toLowerCase().includes(q)
+      return (
+        <>
+          {renderAssetCards(allAssets.filter(a => a.category === '원자재' && searchFilter(a)))}
+          {renderAssetCards(allAssets.filter(a => a.category === '미국주식' && searchFilter(a)))}
+          {!q && tierCards}
+          {renderAssetCards(allAssets.filter(a => a.category === '암호화폐' && searchFilter(a)))}
+        </>
+      )
+    }
+    return renderAssetCards(filtered)
+  }
 
   return (
     <div className="min-h-screen bg-background pb-8">
@@ -167,43 +224,7 @@ export function DashboardClient({ domesticAssets, usAssets, prices, domesticStoc
       />
       <main className="px-4 py-4">
         <div className="space-y-3">
-          {isDomesticStock ? (
-            ['1', '2', '3'].map(tier => {
-              const group = tierGroups[tier]
-              if (!group) return null
-              return (
-                <DomesticStockCard
-                  key={tier}
-                  tier={tier}
-                  stockCount={group.count}
-                  heldRatio={group.heldRatio}
-                  targetRatio={tierTargets[tier]}
-                  totalEvalAmount={totalEvalAmount}
-                  stocks={group.stocks}
-                  onTargetChange={v => updateTierTarget(tier, v)}
-                />
-              )
-            })
-          ) : (
-            filtered.map((asset) => (
-              <AssetCard
-                key={asset.id}
-                name={asset.name}
-                symbol={asset.symbol}
-                icon={asset.icon}
-                targetAmount={asset.targetAmount}
-                currentAmount={asset.currentAmount}
-                transferAmount={asset.transferAmount}
-                secondBuyPrice={asset.secondBuyPrice}
-                thirdBuyPrice={asset.thirdBuyPrice}
-                takeProfitPrice={asset.takeProfitPrice}
-                secondBuyMemo={asset.secondBuyMemo}
-                thirdBuyMemo={asset.thirdBuyMemo}
-                takeProfitMemo={asset.takeProfitMemo}
-                color={asset.color}
-              />
-            ))
-          )}
+          {renderContent()}
         </div>
       </main>
     </div>
