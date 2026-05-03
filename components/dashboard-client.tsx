@@ -3,7 +3,8 @@
 import { useState } from "react"
 import { DashboardHeader } from "@/components/dashboard-header"
 import { AssetCard } from "@/components/asset-card"
-import type { DomesticAsset, PriceData, UsAsset } from "@/lib/google-sheets"
+import { DomesticStockCard } from "@/components/domestic-stock-card"
+import type { DomesticAsset, DomesticStock, PriceData, UsAsset } from "@/lib/google-sheets"
 import {
   Gem, CircleDollarSign, Cpu, Flame, Bitcoin, Coins, Zap,
   TrendingUp, ShoppingCart, Globe, Monitor, Shield, Pill, Rocket,
@@ -106,17 +107,21 @@ function buildUsAssets(assets: UsAsset[], prices: Record<string, PriceData>, sta
   })
 }
 
-const categories = ['전체', '원자재', '암호화폐', '미국주식']
+const categories = ['전체', '원자재', '암호화폐', '미국주식', '국내주식']
 
 interface Props {
   domesticAssets: DomesticAsset[]
   usAssets: UsAsset[]
   prices: Record<string, PriceData>
+  domesticStocks: DomesticStock[]
 }
 
-export function DashboardClient({ domesticAssets, usAssets, prices }: Props) {
+export function DashboardClient({ domesticAssets, usAssets, prices, domesticStocks }: Props) {
   const [activeCategory, setActiveCategory] = useState('전체')
   const [searchQuery, setSearchQuery] = useState('')
+  const [tierTargets, setTierTargets] = useState<Record<string, number>>({
+    '1': 40, '2': 35, '3': 30,
+  })
 
   const allAssets: AssetData[] = [
     ...buildDomesticAssets(domesticAssets, prices, 1),
@@ -131,6 +136,17 @@ export function DashboardClient({ domesticAssets, usAssets, prices }: Props) {
       return a.name.toLowerCase().includes(q) || a.symbol.toLowerCase().includes(q)
     })
 
+  // 국내주식 tier 집계
+  const totalEval = domesticStocks.reduce((sum, s) => sum + s.evalAmount, 0)
+  const tierGroups = domesticStocks.reduce((acc, s) => {
+    if (!acc[s.tier]) acc[s.tier] = { count: 0, heldRatio: 0 }
+    acc[s.tier].count++
+    acc[s.tier].heldRatio += s.heldRatio
+    return acc
+  }, {} as Record<string, { count: number; heldRatio: number }>)
+
+  const isDomesticStock = activeCategory === '국내주식'
+
   return (
     <div className="min-h-screen bg-background pb-8">
       <DashboardHeader
@@ -142,24 +158,42 @@ export function DashboardClient({ domesticAssets, usAssets, prices }: Props) {
       />
       <main className="px-4 py-4">
         <div className="space-y-3">
-          {filtered.map((asset) => (
-            <AssetCard
-              key={asset.id}
-              name={asset.name}
-              symbol={asset.symbol}
-              icon={asset.icon}
-              targetAmount={asset.targetAmount}
-              currentAmount={asset.currentAmount}
-              transferAmount={asset.transferAmount}
-              secondBuyPrice={asset.secondBuyPrice}
-              thirdBuyPrice={asset.thirdBuyPrice}
-              takeProfitPrice={asset.takeProfitPrice}
-              secondBuyMemo={asset.secondBuyMemo}
-              thirdBuyMemo={asset.thirdBuyMemo}
-              takeProfitMemo={asset.takeProfitMemo}
-              color={asset.color}
-            />
-          ))}
+          {isDomesticStock ? (
+            ['1', '2', '3'].map(tier => {
+              const group = tierGroups[tier]
+              if (!group) return null
+              return (
+                <DomesticStockCard
+                  key={tier}
+                  tier={tier}
+                  stockCount={group.count}
+                  heldRatio={group.heldRatio}
+                  targetRatio={tierTargets[tier]}
+                  totalEvalAmount={totalEval}
+                  onTargetChange={v => setTierTargets(prev => ({ ...prev, [tier]: v }))}
+                />
+              )
+            })
+          ) : (
+            filtered.map((asset) => (
+              <AssetCard
+                key={asset.id}
+                name={asset.name}
+                symbol={asset.symbol}
+                icon={asset.icon}
+                targetAmount={asset.targetAmount}
+                currentAmount={asset.currentAmount}
+                transferAmount={asset.transferAmount}
+                secondBuyPrice={asset.secondBuyPrice}
+                thirdBuyPrice={asset.thirdBuyPrice}
+                takeProfitPrice={asset.takeProfitPrice}
+                secondBuyMemo={asset.secondBuyMemo}
+                thirdBuyMemo={asset.thirdBuyMemo}
+                takeProfitMemo={asset.takeProfitMemo}
+                color={asset.color}
+              />
+            ))
+          )}
         </div>
       </main>
     </div>

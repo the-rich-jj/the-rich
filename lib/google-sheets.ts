@@ -25,6 +25,12 @@ export type DomesticAsset = {
   transferAmount: number
 }
 
+export type DomesticStock = {
+  tier: string
+  evalAmount: number
+  heldRatio: number
+}
+
 export type UsAsset = {
   name: string
   ticker: string
@@ -46,15 +52,17 @@ export async function fetchAssetData(): Promise<{
   domestic: DomesticAsset[]
   us: UsAsset[]
   prices: Record<string, PriceData>
+  domesticStocks: DomesticStock[]
 }> {
   const auth = getAuth()
   const sheets = google.sheets({ version: 'v4', auth })
   const id = process.env.GOOGLE_SPREADSHEET_ID!
 
-  const [domesticRes, usRes, priceRes] = await Promise.all([
+  const [domesticRes, usRes, priceRes, dsRes] = await Promise.all([
     sheets.spreadsheets.values.get({ spreadsheetId: id, range: '자산현황!A4:F9' }),
     sheets.spreadsheets.values.get({ spreadsheetId: id, range: '비중관리(미국)!B3:H20' }),
     sheets.spreadsheets.values.get({ spreadsheetId: id, range: '매매가관리!A2:G30' }),
+    sheets.spreadsheets.values.get({ spreadsheetId: id, range: '주식(국내)!A2:I100' }),
   ])
 
   const domestic: DomesticAsset[] = (domesticRes.data.values ?? [])
@@ -90,7 +98,15 @@ export async function fetchAssetData(): Promise<{
     }
   }
 
-  return { domestic, us, prices }
+  const domesticStocks: DomesticStock[] = (dsRes.data.values ?? [])
+    .map(r => ({
+      tier: (r[2] ?? '').toString().trim(),
+      evalAmount: parseKRW(r[7] ?? ''),
+      heldRatio: parseFloat((r[8] ?? '').toString().replace(/%/g, '').replace(/,/g, '')) || 0,
+    }))
+    .filter(s => ['1', '2', '3'].includes(s.tier))
+
+  return { domestic, us, prices, domesticStocks }
 }
 
 const FIELD_TO_COL: Record<string, number> = {

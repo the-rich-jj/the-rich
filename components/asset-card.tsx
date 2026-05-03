@@ -80,8 +80,9 @@ export function AssetCard({
 
   const activeBox = priceBoxes.find(b => b.key === (openModal ?? openTooltip))
   const savedScrollY = useRef(0)
+  const sheetRef = useRef<HTMLDivElement>(null)
 
-  // 모달 열릴 때 배경 스크롤 잠금
+  // 배경 스크롤 잠금
   useEffect(() => {
     if (openModal === null) return
     const y = window.scrollY
@@ -96,6 +97,26 @@ export function AssetCard({
       document.body.style.width = ''
       document.body.style.overflow = ''
       window.scrollTo(0, y)
+    }
+  }, [openModal])
+
+  // visualViewport로 키보드 바로 위에 고정
+  useEffect(() => {
+    if (openModal === null) return
+    const vv = window.visualViewport
+    if (!vv) return
+    const update = () => {
+      if (!sheetRef.current) return
+      const offset = Math.max(0, window.innerHeight - vv.height - vv.offsetTop)
+      sheetRef.current.style.transform = `translateY(${-offset}px)`
+    }
+    update()
+    vv.addEventListener('resize', update)
+    vv.addEventListener('scroll', update)
+    return () => {
+      vv.removeEventListener('resize', update)
+      vv.removeEventListener('scroll', update)
+      if (sheetRef.current) sheetRef.current.style.transform = ''
     }
   }, [openModal])
 
@@ -247,8 +268,8 @@ export function AssetCard({
             onClick={closeModal}
           />
           <div
+            ref={sheetRef}
             className="fixed bottom-0 left-0 right-0 z-50 rounded-t-2xl bg-[#1A1A1E] border-t border-border/50"
-            style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
           >
             <div className="px-4 pt-3 pb-2">
               <div className="w-10 h-1 rounded-full bg-border/40 mx-auto mb-3" />
