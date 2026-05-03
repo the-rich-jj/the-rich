@@ -54,17 +54,19 @@ export async function fetchAssetData(): Promise<{
   prices: Record<string, PriceData>
   domesticStocks: DomesticStock[]
   totalEvalAmount: number
+  tierTargets: Record<string, number>
 }> {
   const auth = getAuth()
   const sheets = google.sheets({ version: 'v4', auth })
   const id = process.env.GOOGLE_SPREADSHEET_ID!
 
-  const [domesticRes, usRes, priceRes, dsRes, totalRes] = await Promise.all([
+  const [domesticRes, usRes, priceRes, dsRes, totalRes, tierRes] = await Promise.all([
     sheets.spreadsheets.values.get({ spreadsheetId: id, range: '자산현황!A4:F9' }),
     sheets.spreadsheets.values.get({ spreadsheetId: id, range: '비중관리(미국)!B3:H20' }),
     sheets.spreadsheets.values.get({ spreadsheetId: id, range: '매매가관리!A2:G30' }),
     sheets.spreadsheets.values.get({ spreadsheetId: id, range: '주식(국내)!A2:I100' }),
     sheets.spreadsheets.values.get({ spreadsheetId: id, range: '자산현황!E2' }),
+    sheets.spreadsheets.values.get({ spreadsheetId: id, range: '자산현황!H1:J1' }),
   ])
 
   const domestic: DomesticAsset[] = (domesticRes.data.values ?? [])
@@ -110,7 +112,14 @@ export async function fetchAssetData(): Promise<{
 
   const totalEvalAmount = parseKRW((totalRes.data.values ?? [])[0]?.[0] ?? '')
 
-  return { domestic, us, prices, domesticStocks, totalEvalAmount }
+  const tierRow = (tierRes.data.values ?? [])[0] ?? []
+  const tierTargets: Record<string, number> = {
+    '1': parseFloat(tierRow[0]) || 40,
+    '2': parseFloat(tierRow[1]) || 35,
+    '3': parseFloat(tierRow[2]) || 30,
+  }
+
+  return { domestic, us, prices, domesticStocks, totalEvalAmount, tierTargets }
 }
 
 const FIELD_TO_COL: Record<string, number> = {
@@ -120,6 +129,24 @@ const FIELD_TO_COL: Record<string, number> = {
   thirdBuyMemo: 4,
   takeProfitPrice: 5,
   takeProfitMemo: 6,
+}
+
+const TIER_TO_COL: Record<string, string> = { '1': 'H', '2': 'I', '3': 'J' }
+
+export async function updateTierTarget(tier: string, value: number) {
+  const col = TIER_TO_COL[tier]
+  if (!col) throw new Error(`Unknown tier: ${tier}`)
+
+  const auth = getAuth(true)
+  const sheets = google.sheets({ version: 'v4', auth })
+  const id = process.env.GOOGLE_SPREADSHEET_ID!
+
+  await sheets.spreadsheets.values.update({
+    spreadsheetId: id,
+    range: `자산현황!${col}1`,
+    valueInputOption: 'RAW',
+    requestBody: { values: [[value]] },
+  })
 }
 
 export async function updatePriceCell(name: string, field: string, value: string) {

@@ -115,25 +115,21 @@ interface Props {
   prices: Record<string, PriceData>
   domesticStocks: DomesticStock[]
   totalEvalAmount: number
+  initialTierTargets: Record<string, number>
 }
 
-export function DashboardClient({ domesticAssets, usAssets, prices, domesticStocks, totalEvalAmount }: Props) {
+export function DashboardClient({ domesticAssets, usAssets, prices, domesticStocks, totalEvalAmount, initialTierTargets }: Props) {
   const [activeCategory, setActiveCategory] = useState('전체')
   const [searchQuery, setSearchQuery] = useState('')
-  const [tierTargets, setTierTargets] = useState<Record<string, number>>(() => {
-    if (typeof window === 'undefined') return { '1': 40, '2': 35, '3': 30 }
-    try {
-      const saved = localStorage.getItem('tierTargets')
-      return saved ? JSON.parse(saved) : { '1': 40, '2': 35, '3': 30 }
-    } catch {
-      return { '1': 40, '2': 35, '3': 30 }
-    }
-  })
+  const [tierTargets, setTierTargets] = useState<Record<string, number>>(initialTierTargets)
 
   const updateTierTarget = (tier: string, v: number) => {
-    const next = { ...tierTargets, [tier]: v }
-    setTierTargets(next)
-    try { localStorage.setItem('tierTargets', JSON.stringify(next)) } catch {}
+    setTierTargets(prev => ({ ...prev, [tier]: v }))
+    fetch('/api/update-tier-target', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ tier, value: v }),
+    }).catch(() => {})
   }
 
   const allAssets: AssetData[] = [
