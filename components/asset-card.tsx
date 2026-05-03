@@ -12,6 +12,7 @@ interface AssetCardProps {
   targetAmount: number
   currentAmount: number
   transferAmount: number
+  currentPriceKRW?: number
   secondBuyPrice?: string
   thirdBuyPrice?: string
   takeProfitPrice?: string
@@ -33,7 +34,7 @@ function fmtPrice(s: string): string {
 
 export function AssetCard({
   name, symbol, icon,
-  targetAmount, currentAmount, transferAmount,
+  targetAmount, currentAmount, transferAmount, currentPriceKRW,
   secondBuyPrice = '', thirdBuyPrice = '', takeProfitPrice = '',
   secondBuyMemo = '', thirdBuyMemo = '', takeProfitMemo = '',
   color,
@@ -167,7 +168,10 @@ export function AssetCard({
             </div>
             <div>
               <h3 className="font-semibold text-sm text-foreground">{name}</h3>
-              <p className="text-xs text-muted-foreground">{symbol}</p>
+              <p className="text-xs text-muted-foreground">
+                {symbol}
+                {currentPriceKRW ? ` · ₩${currentPriceKRW.toLocaleString()}` : ''}
+              </p>
             </div>
           </div>
 
@@ -200,7 +204,13 @@ export function AssetCard({
             <div className="flex justify-between text-xs text-muted-foreground mt-2">
               <span>보유</span>
               <span style={{ color: transferAmount < 0 ? '#EF4444' : color }}>
-                {transferAmount < 0 ? `-${fmt(Math.abs(transferAmount))} 초과` : `+${fmt(transferAmount)} 추가`}
+                {transferAmount < 0
+                  ? `-${fmt(Math.abs(transferAmount))} 초과`
+                  : `+${fmt(transferAmount)} 추가${currentPriceKRW && transferAmount > 0
+                      ? ` (≈${Math.floor(transferAmount / currentPriceKRW) < 1
+                          ? (transferAmount / currentPriceKRW).toFixed(1)
+                          : Math.floor(transferAmount / currentPriceKRW)}주)`
+                      : ''}`}
               </span>
               <span>목표 {fmt(targetAmount)}</span>
             </div>

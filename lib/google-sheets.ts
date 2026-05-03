@@ -23,6 +23,7 @@ export type DomesticAsset = {
   currentAmount: number
   targetAmount: number
   transferAmount: number
+  currentPrice?: number
 }
 
 export type DomesticStock = {
@@ -38,6 +39,7 @@ export type UsAsset = {
   currentAmount: number
   targetAmount: number
   transferAmount: number
+  currentPriceKRW?: number
 }
 
 export type PriceData = {
@@ -61,32 +63,55 @@ export async function fetchAssetData(): Promise<{
   const sheets = google.sheets({ version: 'v4', auth })
   const id = process.env.GOOGLE_SPREADSHEET_ID!
 
-  const [domesticRes, usRes, priceRes, dsRes, totalRes, tierRes] = await Promise.all([
+  const [domesticRes, usRes, priceRes, dsRes, totalRes, tierRes, usPriceRes, fxRes] = await Promise.all([
     sheets.spreadsheets.values.get({ spreadsheetId: id, range: '자산현황!A4:F9' }),
     sheets.spreadsheets.values.get({ spreadsheetId: id, range: '비중관리(미국)!B3:H20' }),
     sheets.spreadsheets.values.get({ spreadsheetId: id, range: '매매가관리!A2:G30' }),
     sheets.spreadsheets.values.get({ spreadsheetId: id, range: '주식(국내)!A2:I100' }),
     sheets.spreadsheets.values.get({ spreadsheetId: id, range: '자산현황!E2' }),
     sheets.spreadsheets.values.get({ spreadsheetId: id, range: '자산현황!H1:J1' }),
+    sheets.spreadsheets.values.get({ spreadsheetId: id, range: '주식(미국)!A2:E100' }),
+    sheets.spreadsheets.values.get({ spreadsheetId: id, range: '현금!M1' }),
   ])
 
+  const exchangeRate = parseFloat(
+    (fxRes.data.values ?? [])[0]?.[0]?.toString().replace(/,/g, '') ?? ''
+  ) || 1350
+
+  const usPriceUSD: Record<string, number> = {}
+  for (const r of (usPriceRes.data.values ?? [])) {
+    const name = (r[0] ?? '').toString().trim()
+    if (!name) continue
+    usPriceUSD[name] = parseFloat((r[4] ?? '').toString().replace(/,/g, '')) || 0
+  }
+
   const domestic: DomesticAsset[] = (domesticRes.data.values ?? [])
-    .map(r => ({
-      name: r[0] ?? '',
-      currentAmount: parseKRW(r[1] ?? ''),
-      targetAmount: parseKRW(r[4] ?? ''),
-      transferAmount: parseKRW(r[5] ?? ''),
-    }))
+    .map(r => {
+      const price = parseFloat((r[3] ?? '').toString().replace(/,/g, ''))
+      return {
+        name: r[0] ?? '',
+        currentAmount: parseKRW(r[1] ?? ''),
+        targetAmount: parseKRW(r[4] ?? ''),
+        transferAmount: parseKRW(r[5] ?? ''),
+        ...(price > 0 ? { currentPrice: price } : {}),
+      }
+    })
     .filter(a => a.name)
 
   const us: UsAsset[] = (usRes.data.values ?? [])
-    .map(r => ({
-      name: r[0] ?? '',
-      ticker: r[1] ?? '',
-      currentAmount: parseKRW(r[2] ?? ''),
-      targetAmount: parseKRW(r[5] ?? ''),
-      transferAmount: parseKRW(r[6] ?? ''),
-    }))
+    .map(r => {
+      const name = (r[0] ?? '') as string
+      const priceUSD = usPriceUSD[name] ?? 0
+      const priceKRW = priceUSD > 0 ? Math.round(priceUSD * exchangeRate) : 0
+      return {
+        name,
+        ticker: r[1] ?? '',
+        currentAmount: parseKRW(r[2] ?? ''),
+        targetAmount: parseKRW(r[5] ?? ''),
+        transferAmount: parseKRW(r[6] ?? ''),
+        ...(priceKRW > 0 ? { currentPriceKRW: priceKRW } : {}),
+      }
+    })
     .filter(a => a.name)
 
   const prices: Record<string, PriceData> = {}

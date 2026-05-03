@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState } from "react"
 import { DashboardHeader } from "@/components/dashboard-header"
 import { AssetCard } from "@/components/asset-card"
 import { DomesticStockCard } from "@/components/domestic-stock-card"
@@ -20,6 +20,7 @@ type AssetData = {
   targetAmount: number
   currentAmount: number
   transferAmount: number
+  currentPriceKRW?: number
   secondBuyPrice: string
   thirdBuyPrice: string
   takeProfitPrice: string
@@ -71,6 +72,7 @@ function buildDomesticAssets(entries: DomesticAsset[], prices: Record<string, Pr
       currentAmount: entry.currentAmount,
       targetAmount: entry.targetAmount,
       transferAmount: entry.transferAmount,
+      currentPriceKRW: entry.currentPrice,
       secondBuyPrice: p.secondBuyPrice ?? '',
       secondBuyMemo: p.secondBuyMemo ?? '',
       thirdBuyPrice: p.thirdBuyPrice ?? '',
@@ -97,6 +99,7 @@ function buildUsAssets(assets: UsAsset[], prices: Record<string, PriceData>, sta
       currentAmount: asset.currentAmount,
       targetAmount: asset.targetAmount,
       transferAmount: asset.transferAmount,
+      currentPriceKRW: asset.currentPriceKRW,
       secondBuyPrice: p.secondBuyPrice ?? '',
       secondBuyMemo: p.secondBuyMemo ?? '',
       thirdBuyPrice: p.thirdBuyPrice ?? '',
@@ -123,9 +126,10 @@ export function DashboardClient({ domesticAssets, usAssets, prices, domesticStoc
   const [searchQuery, setSearchQuery] = useState('')
   const [tierTargets, setTierTargets] = useState<Record<string, number>>(initialTierTargets)
 
-  useEffect(() => {
+  const handleCategoryChange = (cat: string) => {
+    setActiveCategory(cat)
     window.scrollTo({ top: 0, behavior: 'smooth' })
-  }, [activeCategory])
+  }
 
   const updateTierTarget = (tier: string, v: number) => {
     setTierTargets(prev => ({ ...prev, [tier]: v }))
@@ -168,6 +172,7 @@ export function DashboardClient({ domesticAssets, usAssets, prices, domesticStoc
         targetAmount={asset.targetAmount}
         currentAmount={asset.currentAmount}
         transferAmount={asset.transferAmount}
+        currentPriceKRW={asset.currentPriceKRW}
         secondBuyPrice={asset.secondBuyPrice}
         thirdBuyPrice={asset.thirdBuyPrice}
         takeProfitPrice={asset.takeProfitPrice}
@@ -178,38 +183,44 @@ export function DashboardClient({ domesticAssets, usAssets, prices, domesticStoc
       />
     ))
 
-  const tierCards = ['1', '2', '3'].map(tier => {
+  const q = searchQuery.trim().toLowerCase()
+  const searchFilter = (a: AssetData) =>
+    !q || a.name.toLowerCase().includes(q) || a.symbol.toLowerCase().includes(q)
+  const tierFilter = (tier: string) => {
     const group = tierGroups[tier]
-    if (!group) return null
-    return (
-      <DomesticStockCard
-        key={tier}
-        tier={tier}
-        stockCount={group.count}
-        heldRatio={group.heldRatio}
-        targetRatio={tierTargets[tier]}
-        totalEvalAmount={totalEvalAmount}
-        stocks={group.stocks}
-        onTargetChange={v => updateTierTarget(tier, v)}
-      />
-    )
-  })
+    if (!group) return false
+    if (!q) return true
+    return group.stocks.some(s => s.toLowerCase().includes(q)) ||
+      `${tier}티어`.includes(q)
+  }
+
+  const renderTierCards = () =>
+    ['1', '2', '3'].filter(tierFilter).map(tier => {
+      const group = tierGroups[tier]!
+      return (
+        <DomesticStockCard
+          key={tier}
+          tier={tier}
+          stockCount={group.count}
+          heldRatio={group.heldRatio}
+          targetRatio={tierTargets[tier]}
+          totalEvalAmount={totalEvalAmount}
+          stocks={group.stocks}
+          onTargetChange={v => updateTierTarget(tier, v)}
+        />
+      )
+    })
 
   const renderContent = () => {
-    if (activeCategory === '국내주식') return tierCards
-    if (activeCategory === '전체') {
-      const q = searchQuery.trim().toLowerCase()
-      const searchFilter = (a: AssetData) =>
-        !q || a.name.toLowerCase().includes(q) || a.symbol.toLowerCase().includes(q)
-      return (
-        <>
-          {renderAssetCards(allAssets.filter(a => a.category === '원자재' && searchFilter(a)))}
-          {renderAssetCards(allAssets.filter(a => a.category === '미국주식' && searchFilter(a)))}
-          {!q && tierCards}
-          {renderAssetCards(allAssets.filter(a => a.category === '암호화폐' && searchFilter(a)))}
-        </>
-      )
-    }
+    if (activeCategory === '국내주식') return renderTierCards()
+    if (activeCategory === '전체') return (
+      <>
+        {renderAssetCards(allAssets.filter(a => a.category === '원자재' && searchFilter(a)))}
+        {renderAssetCards(allAssets.filter(a => a.category === '미국주식' && searchFilter(a)))}
+        {renderTierCards()}
+        {renderAssetCards(allAssets.filter(a => a.category === '암호화폐' && searchFilter(a)))}
+      </>
+    )
     return renderAssetCards(filtered)
   }
 
@@ -218,12 +229,12 @@ export function DashboardClient({ domesticAssets, usAssets, prices, domesticStoc
       <DashboardHeader
         categories={categories}
         activeCategory={activeCategory}
-        onCategoryChange={setActiveCategory}
+        onCategoryChange={handleCategoryChange}
         searchQuery={searchQuery}
         onSearchChange={setSearchQuery}
       />
       <main className="px-4 py-4">
-        <div className="space-y-3">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
           {renderContent()}
         </div>
       </main>
