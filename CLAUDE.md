@@ -34,27 +34,30 @@ GOOGLE_SPREADSHEET_ID           # 스프레드시트 ID: 1r_HrWM_i7pwNV_F_q1pFL1
 | `자산현황` | `E2` | **전체 포트폴리오 평가금** (국내주식 1종목당 목표 산정 기준) |
 | `비중관리(미국)` | `B3:H20` | 미국주식 (B=종목, C=티커, D=보유액, G=목표액, H=이동금액) |
 | `매매가관리` | `A2:G30` | 매수가/익절가 (A=종목, B=2차매수가, C=메모, D=3차매수가, E=메모, F=익절가, G=메모) |
-| `주식(국내)` | `A2:I100` | 국내주식 (C=티어, H=평가금, I=보유비율%) |
+| `주식(국내)` | `A2:I100` | 국내주식 (A=종목명, C=티어, H=평가금, I=보유비율%) |
+| `자산현황` | `H1:J1` | 티어 1/2/3 목표비중 (공유 저장, API로 쓰기) |
 
-**쓰기:** `매매가관리` 시트에 A열로 종목 찾아 해당 행 B~G열 업데이트
+**쓰기:** `매매가관리` 시트에 A열로 종목 찾아 해당 행 B~G열 업데이트  
+**쓰기:** `자산현황!H1:J1` — 티어 목표비중 (updateTierTarget)
 
 ## 아키텍처 & 핵심 파일
 
 ```
 app/
-  page.tsx                  # Server Component — fetchAssetData() 호출, revalidate=0
+  page.tsx                          # Server Component — fetchAssetData() 호출, revalidate=0
   layout.tsx
   globals.css
-  api/update-price/route.ts # POST — 매매가관리 시트 셀 업데이트
+  api/update-price/route.ts         # POST — 매매가관리 시트 셀 업데이트
+  api/update-tier-target/route.ts   # POST — 자산현황 H1:J1 티어 목표비중 업데이트
 
 components/
   dashboard-client.tsx      # Client Component — 카테고리/검색 상태, ASSET_CONFIG, 티어 targets
   dashboard-header.tsx      # 카테고리 탭 + 검색창 (font-size 16px → iOS zoom 방지)
   asset-card.tsx            # 종목 카드 (진행바, 툴팁, 바텀시트 편집 모달)
-  domestic-stock-card.tsx   # 국내주식 티어 카드 (1/2/3티어)
+  domestic-stock-card.tsx   # 국내주식 티어 카드 (1/2/3티어) + 종목 리스트 바텀시트
 
 lib/
-  google-sheets.ts          # Google Sheets API — fetchAssetData() + updatePriceCell()
+  google-sheets.ts          # Google Sheets API — fetchAssetData() + updatePriceCell() + updateTierTarget()
 ```
 
 ## 카테고리 & ASSET_CONFIG
@@ -79,9 +82,12 @@ lib/
 | 항목 | 내용 |
 |------|------|
 | 색상 | 1티어 `#F5A623`, 2티어 `#8B8FA8`, 3티어 `#CD7F32` |
-| 기본 목표비중 | 1티어 40%, 2티어 35%, 3티어 30% (편집 가능) |
+| 기본 목표비중 | 1티어 40%, 2티어 35%, 3티어 30% (편집 가능, Sheets에 저장) |
 | 진행바 | heldRatio(I열 합산) / targetRatio × 100% |
 | 1종목당 목표 | `자산현황!E2` × targetRatio% ÷ 티어 종목 수 |
+| 하단 3칸 그리드 | 1종목당 목표 / 목표 비중(✏ 편집) / 종목 리스트 |
+| 종목 리스트 | 버튼 탭 → 바텀시트 (A열 종목명 목록, max-height 55vh, 스크롤) |
+| 목표비중 저장 방식 | 로컬 state + `/api/update-tier-target` POST → Sheets `H1:J1` 쓰기 (전체 공유) |
 
 ## 카드 UI 상수
 
