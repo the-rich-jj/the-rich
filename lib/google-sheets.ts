@@ -70,7 +70,7 @@ export async function fetchAssetData(): Promise<{
     sheets.spreadsheets.values.get({ spreadsheetId: id, range: '주식(국내)!A2:I100' }),
     sheets.spreadsheets.values.get({ spreadsheetId: id, range: '자산현황!E2' }),
     sheets.spreadsheets.values.get({ spreadsheetId: id, range: '자산현황!H1:J1' }),
-    sheets.spreadsheets.values.get({ spreadsheetId: id, range: '금&은!D10:D30' }),
+    sheets.spreadsheets.values.get({ spreadsheetId: id, range: "'금&은'!D10:D30" }),
     sheets.spreadsheets.values.get({ spreadsheetId: id, range: '현금!M1' }),
   ])
 
