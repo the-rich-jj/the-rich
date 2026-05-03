@@ -157,7 +157,6 @@ export function DomesticStockCard({
               </button>
             )}
           </div>
-        </div>
 
           <button
             onClick={() => setShowList(true)}
@@ -166,6 +165,7 @@ export function DomesticStockCard({
             <p className="text-xs text-muted-foreground mb-0.5">종목 리스트</p>
             <p className="text-sm font-semibold text-foreground">{stockCount}종목</p>
           </button>
+        </div>
       </CardContent>
 
       {/* 종목 리스트 바텀시트 */}
