@@ -52,8 +52,7 @@ export function DomesticStockCard({
         <div className="flex items-center gap-2 mb-0">
           <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: color }} />
           <h3 className="font-semibold text-sm text-foreground">{label}</h3>
-          <span className="text-xs text-muted-foreground">{cap}</span>
-          <span className="text-xs text-muted-foreground">{stockCount}종목</span>
+          <span className="text-xs text-muted-foreground">· {cap} · {stockCount}종목</span>
         </div>
 
         {/* Progress Bar */}
