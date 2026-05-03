@@ -66,6 +66,12 @@ lib/
 
 `ASSET_CONFIG`는 `dashboard-client.tsx`에 정의. 미국주식은 시트 C열 티커 우선(`asset.ticker`), `...config` 이후에 symbol 덮어쓰는 순서 주의.
 
+**전체 탭 렌더링**: 원자재 → 미국주식 → 국내주식(티어카드 3개) → 암호화폐 순서로 모두 표시. 검색어 입력 시 국내주식 티어카드는 숨기고 나머지만 필터링.
+
+**탭 UX**:
+- 탭 클릭 시 `scrollIntoView({ behavior: 'smooth', inline: 'nearest' })` — 잘린 탭을 온전히 보이게 스크롤
+- 탭 변경 시 `window.scrollTo({ top: 0, behavior: 'smooth' })` — 콘텐츠 맨 위로 이동 (`useEffect([activeCategory])`)
+
 ## AssetCard (asset-card.tsx)
 
 - 종목별 진행바: `currentAmount / targetAmount * 100%`
