@@ -57,6 +57,7 @@ export type PriceData = {
   thirdBuyMemo: string
   takeProfitPrice: string
   takeProfitMemo: string
+  actionMemo: string
 }
 
 export async function fetchAssetData(): Promise<{
@@ -76,7 +77,7 @@ export async function fetchAssetData(): Promise<{
   const [domesticRes, usRes, priceRes, dsRes, totalRes, tierRes, commodityPriceRes, fxRes, coinRes] = await Promise.all([
     sheets.spreadsheets.values.get({ spreadsheetId: id, range: '자산현황!A4:F9' }),
     sheets.spreadsheets.values.get({ spreadsheetId: id, range: 'Database(미국)!A2:P' }),
-    sheets.spreadsheets.values.get({ spreadsheetId: id, range: '매매가관리!A2:G30' }),
+    sheets.spreadsheets.values.get({ spreadsheetId: id, range: '매매가관리!A2:H30' }),
     sheets.spreadsheets.values.get({ spreadsheetId: id, range: 'Database(국내)!A2:M' }),
     sheets.spreadsheets.values.get({ spreadsheetId: id, range: '자산현황!E2' }),
     sheets.spreadsheets.values.get({ spreadsheetId: id, range: '자산현황!H1:J1' }),
@@ -142,6 +143,7 @@ export async function fetchAssetData(): Promise<{
       thirdBuyMemo: r[4] ?? '',
       takeProfitPrice: r[5] ?? '',
       takeProfitMemo: r[6] ?? '',
+      actionMemo: r[7] ?? '',
     }
   }
 
@@ -183,6 +185,7 @@ const FIELD_TO_COL: Record<string, number> = {
   thirdBuyMemo: 4,
   takeProfitPrice: 5,
   takeProfitMemo: 6,
+  actionMemo: 7,
 }
 
 const TIER_TO_COL: Record<string, string> = { '1': 'H', '2': 'I', '3': 'J' }

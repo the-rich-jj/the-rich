@@ -18,12 +18,14 @@ interface AssetCardProps {
   secondBuyMemo?: string
   thirdBuyMemo?: string
   takeProfitMemo?: string
+  actionMemo?: string
   color: string
   isUsdBased?: boolean
   exchangeRate?: number
 }
 
 type BoxKey = "second" | "third" | "profit"
+type ModalKey = BoxKey | "action"
 
 function fmtPrice(s: string): string {
   if (!s?.trim()) return ''
@@ -41,15 +43,17 @@ export function AssetCard({
   targetAmount, currentAmount, transferAmount, currentPriceKRW,
   secondBuyPrice = '', thirdBuyPrice = '', takeProfitPrice = '',
   secondBuyMemo = '', thirdBuyMemo = '', takeProfitMemo = '',
+  actionMemo = '',
   color,
   isUsdBased = false,
   exchangeRate = 1350,
 }: AssetCardProps) {
   const [local, setLocal] = useState({
     secondBuyPrice, secondBuyMemo, thirdBuyPrice, thirdBuyMemo, takeProfitPrice, takeProfitMemo,
+    actionMemo,
   })
   const [showUsd, setShowUsd] = useState(isUsdBased)
-  const [openModal, setOpenModal] = useState<BoxKey | null>(null)
+  const [openModal, setOpenModal] = useState<ModalKey | null>(null)
   const [draftPrice, setDraftPrice] = useState('')
   const [draftMemo, setDraftMemo] = useState('')
   const [saving, setSaving] = useState(false)
@@ -132,35 +136,52 @@ export function AssetCard({
     }
   }, [openModal])
 
-  const openEditModal = (box: typeof priceBoxes[0]) => {
+  const openPriceModal = (box: typeof priceBoxes[0]) => {
     setDraftPrice(local[box.priceKey])
     setDraftMemo(local[box.memoKey])
     setOpenModal(box.key)
   }
 
+  const openActionModal = () => {
+    setDraftMemo(local.actionMemo)
+    setOpenModal('action')
+  }
+
   const closeModal = () => setOpenModal(null)
 
   const handleSave = async () => {
-    if (!openModal || !activeBox) return
+    if (!openModal) return
     setSaving(true)
-    setLocal(prev => ({
-      ...prev,
-      [activeBox.priceKey]: draftPrice.trim(),
-      [activeBox.memoKey]: draftMemo.trim(),
-    }))
-    setOpenModal(null)
-    await Promise.all([
-      fetch('/api/update-price', {
+
+    if (openModal === 'action') {
+      setLocal(prev => ({ ...prev, actionMemo: draftMemo.trim() }))
+      setOpenModal(null)
+      await fetch('/api/update-price', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, field: activeBox.priceKey, value: draftPrice.trim() }),
-      }).catch(() => {}),
-      fetch('/api/update-price', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, field: activeBox.memoKey, value: draftMemo.trim() }),
-      }).catch(() => {}),
-    ])
+        body: JSON.stringify({ name, field: 'actionMemo', value: draftMemo.trim() }),
+      }).catch(() => {})
+    } else if (activeBox) {
+      setLocal(prev => ({
+        ...prev,
+        [activeBox.priceKey]: draftPrice.trim(),
+        [activeBox.memoKey]: draftMemo.trim(),
+      }))
+      setOpenModal(null)
+      await Promise.all([
+        fetch('/api/update-price', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name, field: activeBox.priceKey, value: draftPrice.trim() }),
+        }).catch(() => {}),
+        fetch('/api/update-price', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name, field: activeBox.memoKey, value: draftMemo.trim() }),
+        }).catch(() => {}),
+      ])
+    }
+
     setSaving(false)
   }
 
@@ -232,7 +253,7 @@ export function AssetCard({
             </div>
           </div>
 
-          {/* Price Targets — 값 있는 박스만 표시 */}
+          {/* Price Targets — 값 있는 박스만 표시, 메모는 탭 시 모달에서만 확인 */}
           {visibleBoxes.length > 0 && (
             <div className={`grid gap-1.5 ${
               visibleBoxes.length === 3 ? 'grid-cols-3' :
@@ -241,7 +262,7 @@ export function AssetCard({
               {visibleBoxes.map(box => (
                 <button
                   key={box.key}
-                  onClick={() => openEditModal(box)}
+                  onClick={() => openPriceModal(box)}
                   className="rounded-lg p-1.5 text-left active:opacity-70"
                   style={{ backgroundColor: box.bgColor }}
                 >
@@ -249,14 +270,23 @@ export function AssetCard({
                   <p className={`text-xs font-medium ${box.textClass}`}>
                     {fmtPrice(local[box.priceKey])}
                   </p>
-                  {local[box.memoKey]?.trim() && (
-                    <p className="text-xs text-muted-foreground/70 mt-0.5 leading-tight line-clamp-2">
-                      {local[box.memoKey]}
-                    </p>
-                  )}
                 </button>
               ))}
             </div>
+          )}
+
+          {/* 대응 메모 — 내용 있을 때만 표시 */}
+          {local.actionMemo?.trim() && (
+            <button
+              onClick={openActionModal}
+              className="w-full mt-1.5 rounded-lg p-2 text-left active:opacity-70"
+              style={{ backgroundColor: '#1E2028', borderLeft: `3px solid ${color}40` }}
+            >
+              <p className="text-xs text-muted-foreground mb-0.5">대응</p>
+              <p className="text-xs text-foreground/80 leading-relaxed line-clamp-3">
+                {local.actionMemo}
+              </p>
+            </button>
           )}
         </CardContent>
       </Card>
@@ -275,30 +305,32 @@ export function AssetCard({
             <div className="px-4 pt-3 pb-2">
               <div className="w-10 h-1 rounded-full bg-border/40 mx-auto mb-3" />
               <p className="text-sm font-semibold text-foreground">
-                {name} · {activeBox?.label}
+                {name} · {openModal === 'action' ? '대응 메모' : activeBox?.label}
               </p>
             </div>
             <div className="px-4 pb-4 flex flex-col gap-3">
-              <div className="flex flex-col gap-1.5">
-                <label className="text-xs text-muted-foreground">가격</label>
-                <input
-                  value={draftPrice}
-                  onChange={e => setDraftPrice(e.target.value)}
-                  onKeyDown={e => { if (e.key === 'Enter') handleSave() }}
-                  style={{ fontSize: '16px' }}
-                  className="w-full rounded-lg bg-[#252528] border border-border/40 px-3 py-2 text-foreground outline-none focus:border-border"
-                  placeholder="예: 210000, $148.5, 적당할때"
-                />
-              </div>
+              {openModal !== 'action' && (
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-xs text-muted-foreground">가격</label>
+                  <input
+                    value={draftPrice}
+                    onChange={e => setDraftPrice(e.target.value)}
+                    onKeyDown={e => { if (e.key === 'Enter') handleSave() }}
+                    style={{ fontSize: '16px' }}
+                    className="w-full rounded-lg bg-[#252528] border border-border/40 px-3 py-2 text-foreground outline-none focus:border-border"
+                    placeholder="예: 210000, $148.5, 적당할때"
+                  />
+                </div>
+              )}
               <div className="flex flex-col gap-1.5">
                 <label className="text-xs text-muted-foreground">메모</label>
                 <textarea
                   value={draftMemo}
                   onChange={e => setDraftMemo(e.target.value)}
-                  rows={2}
+                  rows={openModal === 'action' ? 4 : 2}
                   style={{ fontSize: '16px' }}
                   className="w-full rounded-lg bg-[#252528] border border-border/40 px-3 py-2 text-foreground outline-none focus:border-border resize-none"
-                  placeholder="매수/익절 근거를 적어보세요"
+                  placeholder={openModal === 'action' ? '현재 대응 전략을 적어보세요' : '매수/익절 근거를 적어보세요'}
                 />
               </div>
               <Button

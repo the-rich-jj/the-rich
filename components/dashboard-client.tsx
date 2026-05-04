@@ -27,6 +27,7 @@ type AssetData = {
   secondBuyMemo: string
   thirdBuyMemo: string
   takeProfitMemo: string
+  actionMemo: string
   color: string
   isUsdBased: boolean
 }
@@ -71,7 +72,7 @@ function buildDomesticAssets(entries: DomesticAsset[], prices: Record<string, Pr
       id: startId + idx,
       name: entry.name,
       ...config,
-      isUsdBased: false,
+      isUsdBased: USD_COMMODITY_NAMES.has(entry.name),
       currentAmount: entry.currentAmount,
       targetAmount: entry.targetAmount,
       transferAmount: entry.transferAmount,
@@ -82,6 +83,7 @@ function buildDomesticAssets(entries: DomesticAsset[], prices: Record<string, Pr
       thirdBuyMemo: p.thirdBuyMemo ?? '',
       takeProfitPrice: p.takeProfitPrice ?? '',
       takeProfitMemo: p.takeProfitMemo ?? '',
+      actionMemo: p.actionMemo ?? '',
     }
   })
 }
@@ -110,6 +112,7 @@ function buildCoinAssets(coins: CoinAsset[], prices: Record<string, PriceData>, 
       thirdBuyMemo: p.thirdBuyMemo ?? '',
       takeProfitPrice: p.takeProfitPrice ?? '',
       takeProfitMemo: p.takeProfitMemo ?? '',
+      actionMemo: p.actionMemo ?? '',
     }
   })
 }
@@ -138,6 +141,7 @@ function buildUsAssets(assets: UsAsset[], prices: Record<string, PriceData>, sta
       thirdBuyMemo: p.thirdBuyMemo ?? '',
       takeProfitPrice: p.takeProfitPrice ?? '',
       takeProfitMemo: p.takeProfitMemo ?? '',
+      actionMemo: p.actionMemo ?? '',
     }
   })
 }
@@ -156,6 +160,7 @@ interface Props {
 }
 
 const CRYPTO_NAMES = new Set(['비트코인', '알트코인'])
+const USD_COMMODITY_NAMES = new Set(['은', '구리', '천연가스'])
 
 export function DashboardClient({ domesticAssets, usAssets, prices, domesticStocks, totalEvalAmount, initialTierTargets, coins, exchangeRate }: Props) {
   const [activeCategory, setActiveCategory] = useState('전체')
@@ -218,6 +223,7 @@ export function DashboardClient({ domesticAssets, usAssets, prices, domesticStoc
         secondBuyMemo={asset.secondBuyMemo}
         thirdBuyMemo={asset.thirdBuyMemo}
         takeProfitMemo={asset.takeProfitMemo}
+        actionMemo={asset.actionMemo}
         color={asset.color}
         isUsdBased={asset.isUsdBased}
         exchangeRate={exchangeRate}
