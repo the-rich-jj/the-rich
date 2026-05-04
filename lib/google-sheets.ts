@@ -74,7 +74,7 @@ export async function fetchAssetData(): Promise<{
 
   const [domesticRes, usRes, priceRes, dsRes, totalRes, tierRes, commodityPriceRes, fxRes, coinRes] = await Promise.all([
     sheets.spreadsheets.values.get({ spreadsheetId: id, range: '자산현황!A4:F9' }),
-    sheets.spreadsheets.values.get({ spreadsheetId: id, range: '비중관리(미국)!B3:I20' }),
+    sheets.spreadsheets.values.get({ spreadsheetId: id, range: 'Database(미국)!A2:P' }),
     sheets.spreadsheets.values.get({ spreadsheetId: id, range: '매매가관리!A2:G30' }),
     sheets.spreadsheets.values.get({ spreadsheetId: id, range: 'Database(국내)!A2:M' }),
     sheets.spreadsheets.values.get({ spreadsheetId: id, range: '자산현황!E2' }),
@@ -114,17 +114,17 @@ export async function fetchAssetData(): Promise<{
     })
     .filter(a => a.name)
 
-  // 비중관리(미국) B3:I20 → r[0]=B(name), r[1]=C(ticker), r[2]=D(보유), r[5]=G(목표), r[6]=H(이동), r[7]=I(현재가 KRW)
+  // Database(미국) A2:P → r[0]=A(ticker), r[1]=B(name), r[9]=J(현재가 USD), r[11]=L(평가금 KRW), r[14]=O(목표금액 KRW), r[15]=P(이동금액 KRW)
   const us: UsAsset[] = (usRes.data.values ?? [])
     .map(r => {
-      const name = (r[0] ?? '') as string
-      const priceKRW = parseNum(r[7])
+      const name = (r[1] ?? '').toString().trim()
+      const priceKRW = Math.round(parseNum(r[9]) * exchangeRate)
       return {
         name,
-        ticker: r[1] ?? '',
-        currentAmount: parseKRW(r[2] ?? ''),
-        targetAmount: parseKRW(r[5] ?? ''),
-        transferAmount: parseKRW(r[6] ?? ''),
+        ticker: (r[0] ?? '').toString().trim(),
+        currentAmount: parseKRW(r[11] ?? ''),
+        targetAmount: parseKRW(r[14] ?? ''),
+        transferAmount: parseKRW(r[15] ?? ''),
         ...(priceKRW > 0 ? { currentPriceKRW: priceKRW } : {}),
       }
     })
