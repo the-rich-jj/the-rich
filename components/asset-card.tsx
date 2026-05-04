@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from "react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
+import { Pencil } from "lucide-react"
 
 interface AssetCardProps {
   name: string
@@ -29,7 +30,6 @@ type ModalKey = BoxKey | "action"
 
 function fmtPrice(s: string): string {
   if (!s?.trim()) return ''
-  // 한글, 특수문자, $ 또는 ₩ 포함 → 그대로 표시
   if (/[^\d.,₩$\s-]/.test(s) || s.includes('$') || s.includes('₩')) return s.trim()
   const n = parseFloat(s.replace(/,/g, ''))
   if (isNaN(n)) return s.trim()
@@ -53,6 +53,7 @@ export function AssetCard({
     actionMemo,
   })
   const [showUsd, setShowUsd] = useState(isUsdBased)
+  const [openTooltip, setOpenTooltip] = useState<BoxKey | null>(null)
   const [openModal, setOpenModal] = useState<ModalKey | null>(null)
   const [draftPrice, setDraftPrice] = useState('')
   const [draftMemo, setDraftMemo] = useState('')
@@ -87,16 +88,25 @@ export function AssetCard({
     memoKey: keyof typeof local
     bgColor: string
     textClass: string
+    tooltipAlign: string
   }> = [
-    { key: "second", label: "2차 매수가", priceKey: "secondBuyPrice", memoKey: "secondBuyMemo", bgColor: "#252528", textClass: "text-foreground" },
-    { key: "third",  label: "3차 매수가", priceKey: "thirdBuyPrice",  memoKey: "thirdBuyMemo",  bgColor: "#252528", textClass: "text-foreground" },
-    { key: "profit", label: "익절가",     priceKey: "takeProfitPrice", memoKey: "takeProfitMemo", bgColor: "#1E2820", textClass: "text-primary" },
+    { key: "second", label: "2차 매수가", priceKey: "secondBuyPrice", memoKey: "secondBuyMemo", bgColor: "#252528", textClass: "text-foreground",  tooltipAlign: "left-0" },
+    { key: "third",  label: "3차 매수가", priceKey: "thirdBuyPrice",  memoKey: "thirdBuyMemo",  bgColor: "#252528", textClass: "text-foreground",  tooltipAlign: "left-1/2 -translate-x-1/2" },
+    { key: "profit", label: "익절가",     priceKey: "takeProfitPrice", memoKey: "takeProfitMemo", bgColor: "#1E2820", textClass: "text-primary", tooltipAlign: "right-0 left-auto" },
   ]
 
   const visibleBoxes = priceBoxes.filter(box => !!local[box.priceKey]?.trim())
   const activeBox = priceBoxes.find(b => b.key === openModal)
   const savedScrollY = useRef(0)
   const sheetRef = useRef<HTMLDivElement>(null)
+
+  // 툴팁 외부 클릭 시 닫기
+  useEffect(() => {
+    if (openTooltip === null) return
+    const close = () => setOpenTooltip(null)
+    document.addEventListener("click", close)
+    return () => document.removeEventListener("click", close)
+  }, [openTooltip])
 
   // 배경 스크롤 잠금
   useEffect(() => {
@@ -139,6 +149,7 @@ export function AssetCard({
   const openPriceModal = (box: typeof priceBoxes[0]) => {
     setDraftPrice(local[box.priceKey])
     setDraftMemo(local[box.memoKey])
+    setOpenTooltip(null)
     setOpenModal(box.key)
   }
 
@@ -253,40 +264,79 @@ export function AssetCard({
             </div>
           </div>
 
-          {/* Price Targets — 값 있는 박스만 표시, 메모는 탭 시 모달에서만 확인 */}
+          {/* Price Targets */}
           {visibleBoxes.length > 0 && (
             <div className={`grid gap-1.5 ${
               visibleBoxes.length === 3 ? 'grid-cols-3' :
               visibleBoxes.length === 2 ? 'grid-cols-2' : 'grid-cols-1'
             }`}>
-              {visibleBoxes.map(box => (
-                <button
-                  key={box.key}
-                  onClick={() => openPriceModal(box)}
-                  className="rounded-lg p-1.5 text-left active:opacity-70"
-                  style={{ backgroundColor: box.bgColor }}
-                >
-                  <p className="text-xs text-muted-foreground mb-0.5">{box.label}</p>
-                  <p className={`text-xs font-medium ${box.textClass}`}>
-                    {fmtPrice(local[box.priceKey])}
-                  </p>
-                </button>
-              ))}
+              {visibleBoxes.map(box => {
+                const memo = local[box.memoKey]
+                return (
+                  <div key={box.key} className="relative">
+                    {/* Tooltip */}
+                    {openTooltip === box.key && (
+                      <div
+                        className={`absolute bottom-full mb-1.5 z-20 w-max max-w-[220px] ${box.tooltipAlign}`}
+                        onClick={(e: React.MouseEvent) => e.stopPropagation()}
+                      >
+                        <div className="bg-[#252528]/60 backdrop-blur-md border border-border/60 rounded-lg px-2.5 py-2 shadow-lg">
+                          <div className="flex items-start justify-between gap-2">
+                            <p className="text-xs text-foreground leading-relaxed flex-1 break-words">
+                              {memo || <span className="text-muted-foreground/50">메모 없음</span>}
+                            </p>
+                            <button
+                              onClick={(e: React.MouseEvent) => { e.stopPropagation(); openPriceModal(box) }}
+                              className="flex-shrink-0 mt-0.5 opacity-60 active:opacity-100"
+                            >
+                              <Pencil className="w-3 h-3 text-muted-foreground" />
+                            </button>
+                          </div>
+                        </div>
+                        <div className="mx-auto w-0 h-0" style={{
+                          borderLeft: "5px solid transparent",
+                          borderRight: "5px solid transparent",
+                          borderTop: "5px solid hsl(var(--border) / 0.6)",
+                        }} />
+                      </div>
+                    )}
+
+                    {/* Price Box */}
+                    <button
+                      onClick={(e: React.MouseEvent) => {
+                        e.stopPropagation()
+                        setOpenTooltip(prev => prev === box.key ? null : box.key)
+                      }}
+                      className="w-full rounded-lg p-1.5 text-center active:opacity-70"
+                      style={{ backgroundColor: box.bgColor }}
+                    >
+                      <p className="text-xs text-muted-foreground mb-0.5">{box.label}</p>
+                      <p className={`text-xs font-medium ${box.textClass}`}>
+                        {fmtPrice(local[box.priceKey])}
+                      </p>
+                    </button>
+                  </div>
+                )
+              })}
             </div>
           )}
 
-          {/* 대응 메모 — 내용 있을 때만 표시 */}
+          {/* 대응 메모 — 라벨 없이 내용만, 우측 수정 아이콘 */}
           {local.actionMemo?.trim() && (
-            <button
-              onClick={openActionModal}
-              className="w-full mt-1.5 rounded-lg p-2 text-left active:opacity-70"
-              style={{ backgroundColor: '#1E2028', borderLeft: `3px solid ${color}40` }}
+            <div
+              className="mt-1.5 rounded-lg p-1.5 flex items-start gap-2"
+              style={{ backgroundColor: '#252528' }}
             >
-              <p className="text-xs text-muted-foreground mb-0.5">대응</p>
-              <p className="text-xs text-foreground/80 leading-relaxed line-clamp-3">
+              <p className="text-xs text-foreground/80 leading-relaxed flex-1 line-clamp-3">
                 {local.actionMemo}
               </p>
-            </button>
+              <button
+                onClick={openActionModal}
+                className="flex-shrink-0 opacity-60 active:opacity-100 mt-0.5"
+              >
+                <Pencil className="w-3 h-3 text-muted-foreground" />
+              </button>
+            </div>
           )}
         </CardContent>
       </Card>
@@ -294,10 +344,7 @@ export function AssetCard({
       {/* Bottom Sheet */}
       {openModal !== null && (
         <>
-          <div
-            className="fixed inset-0 z-40 bg-black/60"
-            onClick={closeModal}
-          />
+          <div className="fixed inset-0 z-40 bg-black/60" onClick={closeModal} />
           <div
             ref={sheetRef}
             className="fixed bottom-0 left-0 right-0 z-50 rounded-t-2xl bg-[#1A1A1E] border-t border-border/50"
