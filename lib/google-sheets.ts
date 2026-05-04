@@ -67,7 +67,7 @@ export async function fetchAssetData(): Promise<{
     sheets.spreadsheets.values.get({ spreadsheetId: id, range: '자산현황!A4:F9' }),
     sheets.spreadsheets.values.get({ spreadsheetId: id, range: '비중관리(미국)!B3:I20' }),
     sheets.spreadsheets.values.get({ spreadsheetId: id, range: '매매가관리!A2:G30' }),
-    sheets.spreadsheets.values.get({ spreadsheetId: id, range: '주식(국내)!A2:I100' }),
+    sheets.spreadsheets.values.get({ spreadsheetId: id, range: 'Database(국내)!A2:M' }),
     sheets.spreadsheets.values.get({ spreadsheetId: id, range: '자산현황!E2' }),
     sheets.spreadsheets.values.get({ spreadsheetId: id, range: '자산현황!H1:J1' }),
     sheets.spreadsheets.values.get({ spreadsheetId: id, range: "'금&은'!D10:D35" }),
@@ -131,10 +131,10 @@ export async function fetchAssetData(): Promise<{
 
   const domesticStocks: DomesticStock[] = (dsRes.data.values ?? [])
     .map(r => ({
-      name: (r[0] ?? '').toString().trim(),
-      tier: (r[2] ?? '').toString().trim(),
-      evalAmount: parseKRW(r[7] ?? ''),
-      heldRatio: parseFloat((r[8] ?? '').toString().replace(/%/g, '').replace(/,/g, '')) || 0,
+      name: (r[1] ?? '').toString().trim(),
+      tier: (r[5] ?? '').toString().trim().replace('티어', ''),
+      evalAmount: parseKRW(r[11] ?? ''),
+      heldRatio: parseFloat((r[12] ?? '').toString().replace(/%/g, '').replace(/,/g, '')) || 0,
     }))
     .filter(s => ['1', '2', '3'].includes(s.tier))
 
