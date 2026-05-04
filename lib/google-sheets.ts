@@ -70,19 +70,23 @@ export async function fetchAssetData(): Promise<{
     sheets.spreadsheets.values.get({ spreadsheetId: id, range: 'Database(국내)!A2:M' }),
     sheets.spreadsheets.values.get({ spreadsheetId: id, range: '자산현황!E2' }),
     sheets.spreadsheets.values.get({ spreadsheetId: id, range: '자산현황!H1:J1' }),
-    sheets.spreadsheets.values.get({ spreadsheetId: id, range: "'금&은'!D10:D35" }),
+    sheets.spreadsheets.values.get({ spreadsheetId: id, range: 'Database(원자재)!A2:J' }),
     sheets.spreadsheets.values.get({ spreadsheetId: id, range: '현금!M1' }),
   ])
 
   const parseNum = (v: unknown) => parseFloat(String(v ?? '').replace(/[₩$\s,]/g, '')) || 0
   const exchangeRate = parseNum((fxRes.data.values ?? [])[0]?.[0]) || 1350
-  const cpRows = commodityPriceRes.data.values ?? []
-  // 금&은!D10:D35 → index: D10=0, D15=5, D25=15, D35=25
+  // Database(원자재) A2:J — A=티커, J=현재가(KRW or USD)
+  const tickerPrice: Record<string, number> = {}
+  for (const r of (commodityPriceRes.data.values ?? [])) {
+    const ticker = (r[0] ?? '').toString().trim()
+    if (ticker) tickerPrice[ticker] = parseNum(r[9])
+  }
   const commodityPriceMap: Record<string, number> = {
-    '금':       parseNum(cpRows[0]?.[0]),                                 // D10: KRW
-    '은':       Math.round(parseNum(cpRows[5]?.[0])  * exchangeRate),     // D15: SLV USD
-    '구리':     Math.round(parseNum(cpRows[15]?.[0]) * exchangeRate),     // D25: FCX USD
-    '천연가스': Math.round(parseNum(cpRows[25]?.[0]) * exchangeRate),     // D35: LNG USD
+    '금':       tickerPrice['GOLD'] ?? 0,                                    // KRW 그대로
+    '은':       Math.round((tickerPrice['SLV']  ?? 0) * exchangeRate),       // USD → KRW
+    '구리':     Math.round((tickerPrice['FCX']  ?? 0) * exchangeRate),       // USD → KRW
+    '천연가스': Math.round((tickerPrice['LNG']  ?? 0) * exchangeRate),       // USD → KRW
   }
 
   const domestic: DomesticAsset[] = (domesticRes.data.values ?? [])
