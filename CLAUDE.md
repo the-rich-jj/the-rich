@@ -34,12 +34,13 @@ GOOGLE_SPREADSHEET_ID           # 스프레드시트 ID: 1r_HrWM_i7pwNV_F_q1pFL1
 | `자산현황` | `E2` | **전체 포트폴리오 평가금** (국내주식 1종목당 목표 산정 기준) |
 | `자산현황` | `H1:J1` | 티어 1/2/3 목표비중 (공유 저장, API로 쓰기) |
 | `Database(미국)` | `A2:P` | 미국주식 (A=티커, B=종목명, J=현재가 USD, L=평가금 KRW, O=목표금액 KRW, P=이동금액 KRW) |
-| `매매가관리` | `A2:G30` | 매수가/익절가 (A=종목, B=2차매수가, C=메모, D=3차매수가, E=메모, F=익절가, G=메모) |
+| `매매가관리` | `A2:H30` | 매수가/익절가/대응메모 (A=종목, B=2차매수가, C=메모, D=3차매수가, E=메모, F=익절가, G=메모, H=대응메모) |
 | `Database(국내)` | `A2:M` | 국내주식 (A=종목코드, B=종목명, F=티어("1티어"형식), L=평가금, M=보유비율%) |
 | `Database(원자재)` | `A2:J` | 원자재 현재가 (A=티커, J=현재가) — 금=GOLD(KRW), 은=SLV(USD), 구리=FCX(USD), 천연가스=LNG(USD) |
 | `Database(현금)` | `A2:J` | 환율 (USDKRW 행 J열 = 원달러 환율 KRW) |
+| `Database(코인)` | `A2:M` | 코인 (A=티커, B=종목명, J=현재가 KRW, L=평가금 KRW, M=보유비율%) |
 
-**쓰기:** `매매가관리` 시트에 A열로 종목 찾아 해당 행 B~G열 업데이트  
+**쓰기:** `매매가관리` 시트에 A열로 종목 찾아 해당 행 B~H열 업데이트 (H=actionMemo)  
 **쓰기:** `자산현황!H1:J1` — 티어 목표비중 (updateTierTarget)
 
 ### 현재가 계산 방식
@@ -49,7 +50,8 @@ parseNum(v) = parseFloat(v.replace(/[₩$\s,]/g, ''))   ← ₩/$/ 공백/쉼표
 
 금          → Database(원자재) GOLD행 J열   KRW 그대로
 은/구리/천연가스 → SLV/FCX/LNG행 J열 × 환율  USD → KRW 환산
-미국주식    → parseNum(I열)                 KRW 그대로 (시트에서 이미 환산됨)
+미국주식    → parseNum(J열) × 환율           USD → KRW 환산 (Database(미국) J열=USD 현재가)
+코인        → Database(코인) J열             KRW 그대로
 환율        → Database(현금) USDKRW행 J열 || 1350
 ```
 
@@ -77,7 +79,12 @@ lib/
 
 카테고리 탭 순서: **전체 → 원자재 → 미국주식 → 국내주식 → 암호화폐**
 
-`ASSET_CONFIG`는 `dashboard-client.tsx`에 정의. 미국주식은 시트 C열 티커 우선(`asset.ticker`), `...config` 이후에 symbol 덮어쓰는 순서 주의.
+`ASSET_CONFIG`는 `dashboard-client.tsx`에 정의. 미국주식은 시트 A열 티커 우선(`asset.ticker`), `...config` 이후에 symbol 덮어쓰는 순서 주의.
+
+**암호화폐 목표금액 산정**: `자산현황!A4:F9` 에서 읽음
+- 비트코인 → `domesticAssets.find(a => a.name === '비트코인')?.targetAmount`
+- 이더리움/리플 → `알트코인` 목표액 ÷ 2 (각각 절반씩)
+- `filteredUsAssets = usAssets.filter(a => a.targetAmount > 0)` — 목표 0인 미국주식 숨김
 
 **전체 탭 렌더링**: 원자재 → 미국주식 → 국내주식(티어카드 3개) → 암호화폐 순서로 모두 표시. 검색 시 티어카드도 종목명 기준으로 필터링 포함.
 
@@ -92,7 +99,8 @@ lib/
 - 종목별 진행바: `currentAmount / targetAmount * 100%`
 - 헤더: 종목명 + 심볼 · 현재가(KRW) 표시 — `currentPriceKRW` prop
 - 추가금액 옆 구매 가능 수량 자동계산: `+219만 추가 (≈2주)` — `Math.floor(transferAmount / currentPriceKRW)`
-- 가격 박스(2차매수가/3차매수가/익절가) 탭 → 툴팁(메모 미리보기) → 바텀시트 편집
+- 가격 박스(2차매수가/3차매수가/익절가) 탭 → 툴팁(메모 미리보기+연필 아이콘) → 연필 탭 → 바텀시트 편집
+- **대응 메모 박스**: `actionMemo` 내용만 표시(라벨 없음), 우측 연필 아이콘. 패딩 `px-3 py-1.5`. `line-clamp-3`
 - **바텀시트 모달**: `position: fixed; bottom: 0` + `window.innerHeight + resize` 리스너로 키보드 바로 위에 위치
   - `body.position = 'fixed'`으로 배경 스크롤 잠금
   - `window.innerHeight` 기준 `top` 계산 → 키보드 열리면 innerHeight 감소 → 자동 재배치
@@ -111,6 +119,7 @@ lib/
 | 하단 3칸 그리드 | 1종목당 목표 / 목표 비중(✏ 편집) / 종목 리스트 |
 | 종목 리스트 | 버튼 탭 → 바텀시트 (A열 종목명 목록, max-height 55vh, 스크롤) |
 | 목표비중 저장 방식 | 로컬 state + `/api/update-tier-target` POST → Sheets `H1:J1` 쓰기 (전체 공유) |
+| **종목수 집계** | `evalAmount > 0`인 보유 종목만 카운트 (시트 전체 종목 아님). `heldRatio` 합산은 전체 포함 |
 
 ## 아이콘 & 파비콘
 
