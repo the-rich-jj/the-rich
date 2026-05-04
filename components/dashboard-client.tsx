@@ -88,7 +88,7 @@ function buildDomesticAssets(entries: DomesticAsset[], prices: Record<string, Pr
   })
 }
 
-function buildCoinAssets(coins: CoinAsset[], prices: Record<string, PriceData>, startId: number): AssetData[] {
+function buildCoinAssets(coins: CoinAsset[], prices: Record<string, PriceData>, startId: number, targetMap: Record<string, number>): AssetData[] {
   return coins.map((coin, idx) => {
     const config = ASSET_CONFIG[coin.name] ?? {
       symbol: coin.ticker,
@@ -97,14 +97,15 @@ function buildCoinAssets(coins: CoinAsset[], prices: Record<string, PriceData>, 
       category: '암호화폐',
     }
     const p = prices[coin.name] ?? {}
+    const target = targetMap[coin.name] ?? 0
     return {
       id: startId + idx,
       name: coin.name,
       ...config,
       isUsdBased: false,
       currentAmount: coin.currentAmount,
-      targetAmount: 0,
-      transferAmount: 0,
+      targetAmount: target,
+      transferAmount: target - coin.currentAmount,
       currentPriceKRW: coin.currentPriceKRW,
       secondBuyPrice: p.secondBuyPrice ?? '',
       secondBuyMemo: p.secondBuyMemo ?? '',
@@ -183,10 +184,16 @@ export function DashboardClient({ domesticAssets, usAssets, prices, domesticStoc
 
   const commodityAssets = domesticAssets.filter(a => !CRYPTO_NAMES.has(a.name))
   const filteredUsAssets = usAssets.filter(a => a.targetAmount > 0)
+  const altTarget = Math.round((domesticAssets.find(a => a.name === '알트코인')?.targetAmount ?? 0) / 2)
+  const coinTargetMap: Record<string, number> = {
+    '비트코인': domesticAssets.find(a => a.name === '비트코인')?.targetAmount ?? 0,
+    '이더리움': altTarget,
+    '리플':     altTarget,
+  }
   const allAssets: AssetData[] = [
     ...buildDomesticAssets(commodityAssets, prices, 1),
     ...buildUsAssets(filteredUsAssets, prices, commodityAssets.length + 1),
-    ...buildCoinAssets(coins, prices, commodityAssets.length + filteredUsAssets.length + 1),
+    ...buildCoinAssets(coins, prices, commodityAssets.length + filteredUsAssets.length + 1, coinTargetMap),
   ]
 
   const filtered = allAssets
