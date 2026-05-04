@@ -207,9 +207,11 @@ export function DashboardClient({ domesticAssets, usAssets, prices, domesticStoc
   // 국내주식 tier 집계
   const tierGroups = domesticStocks.reduce((acc, s) => {
     if (!acc[s.tier]) acc[s.tier] = { count: 0, heldRatio: 0, stocks: [] }
-    acc[s.tier].count++
     acc[s.tier].heldRatio += s.heldRatio
-    if (s.name) acc[s.tier].stocks.push(s.name)
+    if (s.evalAmount > 0) {
+      acc[s.tier].count++
+      if (s.name) acc[s.tier].stocks.push(s.name)
+    }
     return acc
   }, {} as Record<string, { count: number; heldRatio: number; stocks: string[] }>)
 

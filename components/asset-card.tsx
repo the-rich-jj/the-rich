@@ -324,7 +324,7 @@ export function AssetCard({
           {/* 대응 메모 — 라벨 없이 내용만, 우측 수정 아이콘 */}
           {local.actionMemo?.trim() && (
             <div
-              className="mt-1.5 rounded-lg p-1.5 flex items-start gap-2"
+              className="mt-1.5 rounded-lg px-3 py-1.5 flex items-start gap-2"
               style={{ backgroundColor: '#252528' }}
             >
               <p className="text-xs text-foreground/80 leading-relaxed flex-1 line-clamp-3">
