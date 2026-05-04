@@ -3,7 +3,6 @@
 import { useState, useEffect, useRef } from "react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Pencil } from "lucide-react"
 
 interface AssetCardProps {
   name: string
@@ -20,13 +19,18 @@ interface AssetCardProps {
   thirdBuyMemo?: string
   takeProfitMemo?: string
   color: string
+  isUsdBased?: boolean
+  exchangeRate?: number
 }
 
-type MemoKey = "second" | "third" | "profit"
+type BoxKey = "second" | "third" | "profit"
 
 function fmtPrice(s: string): string {
-  const n = parseFloat((s ?? '').replace(/,/g, ''))
-  if (!n) return ''
+  if (!s?.trim()) return ''
+  // 한글, 특수문자, $ 또는 ₩ 포함 → 그대로 표시
+  if (/[^\d.,₩$\s-]/.test(s) || s.includes('$') || s.includes('₩')) return s.trim()
+  const n = parseFloat(s.replace(/,/g, ''))
+  if (isNaN(n)) return s.trim()
   if (n >= 100000000) return `${(n / 100000000).toFixed(1)}억`
   if (n >= 10000) return `${Math.round(n / 10000)}만`
   return n.toLocaleString()
@@ -38,12 +42,14 @@ export function AssetCard({
   secondBuyPrice = '', thirdBuyPrice = '', takeProfitPrice = '',
   secondBuyMemo = '', thirdBuyMemo = '', takeProfitMemo = '',
   color,
+  isUsdBased = false,
+  exchangeRate = 1350,
 }: AssetCardProps) {
   const [local, setLocal] = useState({
     secondBuyPrice, secondBuyMemo, thirdBuyPrice, thirdBuyMemo, takeProfitPrice, takeProfitMemo,
   })
-  const [openTooltip, setOpenTooltip] = useState<MemoKey | null>(null)
-  const [openModal, setOpenModal] = useState<MemoKey | null>(null)
+  const [showUsd, setShowUsd] = useState(isUsdBased)
+  const [openModal, setOpenModal] = useState<BoxKey | null>(null)
   const [draftPrice, setDraftPrice] = useState('')
   const [draftMemo, setDraftMemo] = useState('')
   const [saving, setSaving] = useState(false)
@@ -51,35 +57,40 @@ export function AssetCard({
   const percentage = targetAmount > 0 ? Math.min((currentAmount / targetAmount) * 100, 100) : 0
 
   const fmt = (amount: number) => {
+    if (showUsd) {
+      const usd = amount / exchangeRate
+      if (usd >= 10000) return `$${Math.round(usd).toLocaleString('en-US')}`
+      if (usd >= 1) return `$${usd.toFixed(0)}`
+      return `$${usd.toFixed(2)}`
+    }
     if (amount >= 100000000) return `${(amount / 100000000).toFixed(1)}억`
     if (amount >= 10000) return `${(amount / 10000).toFixed(0)}만`
-    return `${amount.toLocaleString()}`
+    return `₩${amount.toLocaleString()}`
   }
+
+  const fmtCurrentPrice = currentPriceKRW
+    ? showUsd
+      ? `$${(currentPriceKRW / exchangeRate).toLocaleString('en-US', { maximumFractionDigits: 2 })}`
+      : `₩${currentPriceKRW.toLocaleString()}`
+    : null
 
   const tipLeft = Math.max(6, Math.min(percentage, 92))
 
-  useEffect(() => {
-    if (openTooltip === null) return
-    const close = () => setOpenTooltip(null)
-    document.addEventListener("click", close)
-    return () => document.removeEventListener("click", close)
-  }, [openTooltip])
-
   const priceBoxes: Array<{
-    key: MemoKey
+    key: BoxKey
     label: string
     priceKey: keyof typeof local
     memoKey: keyof typeof local
     bgColor: string
     textClass: string
-    tooltipAlign: string
   }> = [
-    { key: "second", label: "2차 매수가", priceKey: "secondBuyPrice", memoKey: "secondBuyMemo", bgColor: "#252528", textClass: "text-foreground", tooltipAlign: "left-0" },
-    { key: "third",  label: "3차 매수가", priceKey: "thirdBuyPrice",  memoKey: "thirdBuyMemo",  bgColor: "#252528", textClass: "text-foreground", tooltipAlign: "left-1/2 -translate-x-1/2" },
-    { key: "profit", label: "익절가",     priceKey: "takeProfitPrice", memoKey: "takeProfitMemo", bgColor: "#1E2820", textClass: "text-primary",  tooltipAlign: "right-0 left-auto" },
+    { key: "second", label: "2차 매수가", priceKey: "secondBuyPrice", memoKey: "secondBuyMemo", bgColor: "#252528", textClass: "text-foreground" },
+    { key: "third",  label: "3차 매수가", priceKey: "thirdBuyPrice",  memoKey: "thirdBuyMemo",  bgColor: "#252528", textClass: "text-foreground" },
+    { key: "profit", label: "익절가",     priceKey: "takeProfitPrice", memoKey: "takeProfitMemo", bgColor: "#1E2820", textClass: "text-primary" },
   ]
 
-  const activeBox = priceBoxes.find(b => b.key === (openModal ?? openTooltip))
+  const visibleBoxes = priceBoxes.filter(box => !!local[box.priceKey]?.trim())
+  const activeBox = priceBoxes.find(b => b.key === openModal)
   const savedScrollY = useRef(0)
   const sheetRef = useRef<HTMLDivElement>(null)
 
@@ -101,7 +112,7 @@ export function AssetCard({
     }
   }, [openModal])
 
-  // window.innerHeight는 iOS Safari에서 키보드 열리면 감소 → 시트를 바로 위에 고정
+  // 키보드 열리면 innerHeight 감소 → 시트 바로 위에 재배치
   useEffect(() => {
     if (openModal === null) return
     const update = () => {
@@ -124,7 +135,6 @@ export function AssetCard({
   const openEditModal = (box: typeof priceBoxes[0]) => {
     setDraftPrice(local[box.priceKey])
     setDraftMemo(local[box.memoKey])
-    setOpenTooltip(null)
     setOpenModal(box.key)
   }
 
@@ -166,13 +176,19 @@ export function AssetCard({
             >
               <span style={{ color }}>{icon}</span>
             </div>
-            <div>
+            <div className="flex-1 min-w-0">
               <h3 className="font-semibold text-sm text-foreground">{name}</h3>
               <p className="text-xs text-muted-foreground">
                 {symbol}
-                {currentPriceKRW ? ` · ₩${currentPriceKRW.toLocaleString()}` : ''}
+                {fmtCurrentPrice ? ` · ${fmtCurrentPrice}` : ''}
               </p>
             </div>
+            <button
+              onClick={() => setShowUsd(v => !v)}
+              className="flex-shrink-0 text-xs px-1.5 py-0.5 rounded bg-[#252528] text-muted-foreground active:opacity-60"
+            >
+              {showUsd ? '₩' : '$'}
+            </button>
           </div>
 
           {/* Progress Bar */}
@@ -216,61 +232,36 @@ export function AssetCard({
             </div>
           </div>
 
-          {/* Price Targets */}
-          <div className="grid grid-cols-3 gap-1.5">
-            {priceBoxes.map(box => {
-              const memo = local[box.memoKey]
-              return (
-                <div key={box.key} className="relative">
-                  {/* Tooltip */}
-                  {openTooltip === box.key && (
-                    <div
-                      className={`absolute bottom-full mb-1.5 z-20 w-max max-w-[220px] ${box.tooltipAlign}`}
-                      onClick={(e: { stopPropagation: () => void }) => e.stopPropagation()}
-                    >
-                      <div className="bg-[#252528]/60 backdrop-blur-md border border-border/60 rounded-lg px-2.5 py-2 shadow-lg">
-                        <div className="flex items-start justify-between gap-2">
-                          <p className="text-xs text-foreground leading-relaxed flex-1 break-words">
-                            {memo || <span className="text-muted-foreground/50">메모 없음</span>}
-                          </p>
-                          <button
-                            onClick={(e: { stopPropagation: () => void }) => { e.stopPropagation(); openEditModal(box) }}
-                            className="flex-shrink-0 mt-0.5 opacity-60 active:opacity-100"
-                          >
-                            <Pencil className="w-3 h-3 text-muted-foreground" />
-                          </button>
-                        </div>
-                      </div>
-                      <div className="mx-auto w-0 h-0" style={{
-                        borderLeft: "5px solid transparent",
-                        borderRight: "5px solid transparent",
-                        borderTop: "5px solid hsl(var(--border) / 0.6)",
-                      }} />
-                    </div>
-                  )}
-
-                  {/* Price Box */}
-                  <button
-                    onClick={(e: { stopPropagation: () => void }) => {
-                      e.stopPropagation()
-                      setOpenTooltip(prev => prev === box.key ? null : box.key)
-                    }}
-                    className="w-full rounded-lg p-1.5 text-center active:opacity-70"
-                    style={{ backgroundColor: box.bgColor }}
-                  >
-                    <p className="text-xs text-muted-foreground mb-0.5">{box.label}</p>
-                    <p className={`text-xs font-medium ${box.textClass}`}>
-                      {fmtPrice(local[box.priceKey]) || "-"}
+          {/* Price Targets — 값 있는 박스만 표시 */}
+          {visibleBoxes.length > 0 && (
+            <div className={`grid gap-1.5 ${
+              visibleBoxes.length === 3 ? 'grid-cols-3' :
+              visibleBoxes.length === 2 ? 'grid-cols-2' : 'grid-cols-1'
+            }`}>
+              {visibleBoxes.map(box => (
+                <button
+                  key={box.key}
+                  onClick={() => openEditModal(box)}
+                  className="rounded-lg p-1.5 text-left active:opacity-70"
+                  style={{ backgroundColor: box.bgColor }}
+                >
+                  <p className="text-xs text-muted-foreground mb-0.5">{box.label}</p>
+                  <p className={`text-xs font-medium ${box.textClass}`}>
+                    {fmtPrice(local[box.priceKey])}
+                  </p>
+                  {local[box.memoKey]?.trim() && (
+                    <p className="text-xs text-muted-foreground/70 mt-0.5 leading-tight line-clamp-2">
+                      {local[box.memoKey]}
                     </p>
-                  </button>
-                </div>
-              )
-            })}
-          </div>
+                  )}
+                </button>
+              ))}
+            </div>
+          )}
         </CardContent>
       </Card>
 
-      {/* Bottom Sheet — position:fixed bottom:0 은 iOS에서 키보드 바로 위에 고정됨 */}
+      {/* Bottom Sheet */}
       {openModal !== null && (
         <>
           <div
@@ -296,7 +287,7 @@ export function AssetCard({
                   onKeyDown={e => { if (e.key === 'Enter') handleSave() }}
                   style={{ fontSize: '16px' }}
                   className="w-full rounded-lg bg-[#252528] border border-border/40 px-3 py-2 text-foreground outline-none focus:border-border"
-                  placeholder="예: 210000"
+                  placeholder="예: 210000, $148.5, 적당할때"
                 />
               </div>
               <div className="flex flex-col gap-1.5">

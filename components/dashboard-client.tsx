@@ -28,6 +28,7 @@ type AssetData = {
   thirdBuyMemo: string
   takeProfitMemo: string
   color: string
+  isUsdBased: boolean
 }
 
 const ASSET_CONFIG: Record<string, { symbol: string; icon: React.ReactNode; color: string; category: string }> = {
@@ -70,6 +71,7 @@ function buildDomesticAssets(entries: DomesticAsset[], prices: Record<string, Pr
       id: startId + idx,
       name: entry.name,
       ...config,
+      isUsdBased: false,
       currentAmount: entry.currentAmount,
       targetAmount: entry.targetAmount,
       transferAmount: entry.transferAmount,
@@ -97,6 +99,7 @@ function buildCoinAssets(coins: CoinAsset[], prices: Record<string, PriceData>, 
       id: startId + idx,
       name: coin.name,
       ...config,
+      isUsdBased: false,
       currentAmount: coin.currentAmount,
       targetAmount: 0,
       transferAmount: 0,
@@ -123,6 +126,7 @@ function buildUsAssets(assets: UsAsset[], prices: Record<string, PriceData>, sta
       id: startId + idx,
       name: asset.name,
       ...config,
+      isUsdBased: true,
       symbol: asset.ticker || asset.name.split(' ')[0].toUpperCase().slice(0, 6),
       currentAmount: asset.currentAmount,
       targetAmount: asset.targetAmount,
@@ -148,11 +152,12 @@ interface Props {
   totalEvalAmount: number
   initialTierTargets: Record<string, number>
   coins: CoinAsset[]
+  exchangeRate: number
 }
 
 const CRYPTO_NAMES = new Set(['비트코인', '알트코인'])
 
-export function DashboardClient({ domesticAssets, usAssets, prices, domesticStocks, totalEvalAmount, initialTierTargets, coins }: Props) {
+export function DashboardClient({ domesticAssets, usAssets, prices, domesticStocks, totalEvalAmount, initialTierTargets, coins, exchangeRate }: Props) {
   const [activeCategory, setActiveCategory] = useState('전체')
   const [searchQuery, setSearchQuery] = useState('')
   const [tierTargets, setTierTargets] = useState<Record<string, number>>(initialTierTargets)
@@ -172,10 +177,11 @@ export function DashboardClient({ domesticAssets, usAssets, prices, domesticStoc
   }
 
   const commodityAssets = domesticAssets.filter(a => !CRYPTO_NAMES.has(a.name))
+  const filteredUsAssets = usAssets.filter(a => a.targetAmount > 0)
   const allAssets: AssetData[] = [
     ...buildDomesticAssets(commodityAssets, prices, 1),
-    ...buildUsAssets(usAssets, prices, commodityAssets.length + 1),
-    ...buildCoinAssets(coins, prices, commodityAssets.length + usAssets.length + 1),
+    ...buildUsAssets(filteredUsAssets, prices, commodityAssets.length + 1),
+    ...buildCoinAssets(coins, prices, commodityAssets.length + filteredUsAssets.length + 1),
   ]
 
   const filtered = allAssets
@@ -213,6 +219,8 @@ export function DashboardClient({ domesticAssets, usAssets, prices, domesticStoc
         thirdBuyMemo={asset.thirdBuyMemo}
         takeProfitMemo={asset.takeProfitMemo}
         color={asset.color}
+        isUsdBased={asset.isUsdBased}
+        exchangeRate={exchangeRate}
       />
     ))
 

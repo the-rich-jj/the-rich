@@ -67,6 +67,7 @@ export async function fetchAssetData(): Promise<{
   totalEvalAmount: number
   tierTargets: Record<string, number>
   coins: CoinAsset[]
+  exchangeRate: number
 }> {
   const auth = getAuth()
   const sheets = google.sheets({ version: 'v4', auth })
@@ -172,7 +173,7 @@ export async function fetchAssetData(): Promise<{
     }))
     .filter(c => c.ticker && c.name && c.name !== '-')
 
-  return { domestic, us, prices, domesticStocks, totalEvalAmount, tierTargets, coins }
+  return { domestic, us, prices, domesticStocks, totalEvalAmount, tierTargets, coins, exchangeRate }
 }
 
 const FIELD_TO_COL: Record<string, number> = {
