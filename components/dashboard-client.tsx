@@ -4,7 +4,7 @@ import { useState } from "react"
 import { DashboardHeader } from "@/components/dashboard-header"
 import { AssetCard } from "@/components/asset-card"
 import { DomesticStockCard } from "@/components/domestic-stock-card"
-import type { DomesticAsset, DomesticStock, PriceData, UsAsset } from "@/lib/google-sheets"
+import type { CoinAsset, DomesticAsset, DomesticStock, PriceData, UsAsset } from "@/lib/google-sheets"
 import {
   Gem, CircleDollarSign, Cpu, Flame, Bitcoin, Coins, Zap,
   TrendingUp, ShoppingCart, Globe, Monitor, Shield, Pill, Rocket,
@@ -36,7 +36,8 @@ const ASSET_CONFIG: Record<string, { symbol: string; icon: React.ReactNode; colo
   '구리':                                  { symbol: 'FCX',     icon: <CircleDollarSign className="w-5 h-5" />, color: '#B87333', category: '원자재' },
   '천연가스':                              { symbol: 'LNG',     icon: <Flame className="w-5 h-5" />,         color: '#FF6B35', category: '원자재' },
   '비트코인':                              { symbol: 'BTC',     icon: <Bitcoin className="w-5 h-5" />,       color: '#F7931A', category: '암호화폐' },
-  '알트코인':                              { symbol: 'ALT',     icon: <Zap className="w-5 h-5" />,           color: '#627EEA', category: '암호화폐' },
+  '이더리움':                              { symbol: 'ETH',     icon: <Zap className="w-5 h-5" />,           color: '#627EEA', category: '암호화폐' },
+  '리플':                                  { symbol: 'XRP',     icon: <TrendingUp className="w-5 h-5" />,    color: '#00AAE4', category: '암호화폐' },
   '아마존닷컴':                            { symbol: 'AMZN',   icon: <ShoppingCart className="w-5 h-5" />,  color: '#FF9900', category: '미국주식' },
   'GLOBAL X CYBERSECURITY':               { symbol: 'BUG',    icon: <Shield className="w-5 h-5" />,        color: '#00D4FF', category: '미국주식' },
   '알파벳 A':                              { symbol: 'GOOGL',  icon: <Globe className="w-5 h-5" />,         color: '#4285F4', category: '미국주식' },
@@ -83,6 +84,33 @@ function buildDomesticAssets(entries: DomesticAsset[], prices: Record<string, Pr
   })
 }
 
+function buildCoinAssets(coins: CoinAsset[], prices: Record<string, PriceData>, startId: number): AssetData[] {
+  return coins.map((coin, idx) => {
+    const config = ASSET_CONFIG[coin.name] ?? {
+      symbol: coin.ticker,
+      icon: <Bitcoin className="w-5 h-5" />,
+      color: '#F7931A',
+      category: '암호화폐',
+    }
+    const p = prices[coin.name] ?? {}
+    return {
+      id: startId + idx,
+      name: coin.name,
+      ...config,
+      currentAmount: coin.currentAmount,
+      targetAmount: 0,
+      transferAmount: 0,
+      currentPriceKRW: coin.currentPriceKRW,
+      secondBuyPrice: p.secondBuyPrice ?? '',
+      secondBuyMemo: p.secondBuyMemo ?? '',
+      thirdBuyPrice: p.thirdBuyPrice ?? '',
+      thirdBuyMemo: p.thirdBuyMemo ?? '',
+      takeProfitPrice: p.takeProfitPrice ?? '',
+      takeProfitMemo: p.takeProfitMemo ?? '',
+    }
+  })
+}
+
 function buildUsAssets(assets: UsAsset[], prices: Record<string, PriceData>, startId: number): AssetData[] {
   return assets.map((asset, idx) => {
     const config = ASSET_CONFIG[asset.name] ?? {
@@ -119,9 +147,12 @@ interface Props {
   domesticStocks: DomesticStock[]
   totalEvalAmount: number
   initialTierTargets: Record<string, number>
+  coins: CoinAsset[]
 }
 
-export function DashboardClient({ domesticAssets, usAssets, prices, domesticStocks, totalEvalAmount, initialTierTargets }: Props) {
+const CRYPTO_NAMES = new Set(['비트코인', '알트코인'])
+
+export function DashboardClient({ domesticAssets, usAssets, prices, domesticStocks, totalEvalAmount, initialTierTargets, coins }: Props) {
   const [activeCategory, setActiveCategory] = useState('전체')
   const [searchQuery, setSearchQuery] = useState('')
   const [tierTargets, setTierTargets] = useState<Record<string, number>>(initialTierTargets)
@@ -140,9 +171,11 @@ export function DashboardClient({ domesticAssets, usAssets, prices, domesticStoc
     }).catch(() => {})
   }
 
+  const commodityAssets = domesticAssets.filter(a => !CRYPTO_NAMES.has(a.name))
   const allAssets: AssetData[] = [
-    ...buildDomesticAssets(domesticAssets, prices, 1),
-    ...buildUsAssets(usAssets, prices, domesticAssets.length + 1),
+    ...buildDomesticAssets(commodityAssets, prices, 1),
+    ...buildUsAssets(usAssets, prices, commodityAssets.length + 1),
+    ...buildCoinAssets(coins, prices, commodityAssets.length + usAssets.length + 1),
   ]
 
   const filtered = allAssets

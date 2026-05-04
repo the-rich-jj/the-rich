@@ -18,6 +18,14 @@ function parseKRW(s: string): number {
   return parseFloat(clean) || 0
 }
 
+export type CoinAsset = {
+  name: string
+  ticker: string
+  currentAmount: number
+  currentPriceKRW: number
+  heldRatio: number
+}
+
 export type DomesticAsset = {
   name: string
   currentAmount: number
@@ -58,12 +66,13 @@ export async function fetchAssetData(): Promise<{
   domesticStocks: DomesticStock[]
   totalEvalAmount: number
   tierTargets: Record<string, number>
+  coins: CoinAsset[]
 }> {
   const auth = getAuth()
   const sheets = google.sheets({ version: 'v4', auth })
   const id = process.env.GOOGLE_SPREADSHEET_ID!
 
-  const [domesticRes, usRes, priceRes, dsRes, totalRes, tierRes, commodityPriceRes, fxRes] = await Promise.all([
+  const [domesticRes, usRes, priceRes, dsRes, totalRes, tierRes, commodityPriceRes, fxRes, coinRes] = await Promise.all([
     sheets.spreadsheets.values.get({ spreadsheetId: id, range: '자산현황!A4:F9' }),
     sheets.spreadsheets.values.get({ spreadsheetId: id, range: '비중관리(미국)!B3:I20' }),
     sheets.spreadsheets.values.get({ spreadsheetId: id, range: '매매가관리!A2:G30' }),
@@ -72,6 +81,7 @@ export async function fetchAssetData(): Promise<{
     sheets.spreadsheets.values.get({ spreadsheetId: id, range: '자산현황!H1:J1' }),
     sheets.spreadsheets.values.get({ spreadsheetId: id, range: 'Database(원자재)!A2:J' }),
     sheets.spreadsheets.values.get({ spreadsheetId: id, range: 'Database(현금)!A2:J' }),
+    sheets.spreadsheets.values.get({ spreadsheetId: id, range: 'Database(코인)!A2:M' }),
   ])
 
   const parseNum = (v: unknown) => parseFloat(String(v ?? '').replace(/[₩$\s,¥]/g, '')) || 0
@@ -152,7 +162,17 @@ export async function fetchAssetData(): Promise<{
     '3': parseFloat(tierRow[2]) || 30,
   }
 
-  return { domestic, us, prices, domesticStocks, totalEvalAmount, tierTargets }
+  const coins: CoinAsset[] = (coinRes.data.values ?? [])
+    .map(r => ({
+      ticker: (r[0] ?? '').toString().trim(),
+      name: (r[1] ?? '').toString().trim(),
+      currentAmount: parseKRW(r[11] ?? ''),
+      currentPriceKRW: parseKRW(r[9] ?? ''),
+      heldRatio: parseFloat((r[12] ?? '').toString().replace(/%/g, '').replace(/,/g, '')) || 0,
+    }))
+    .filter(c => c.ticker && c.name && c.name !== '-')
+
+  return { domestic, us, prices, domesticStocks, totalEvalAmount, tierTargets, coins }
 }
 
 const FIELD_TO_COL: Record<string, number> = {
