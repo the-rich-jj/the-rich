@@ -37,7 +37,7 @@ GOOGLE_SPREADSHEET_ID           # 스프레드시트 ID: 1r_HrWM_i7pwNV_F_q1pFL1
 | `매매가관리` | `A2:G30` | 매수가/익절가 (A=종목, B=2차매수가, C=메모, D=3차매수가, E=메모, F=익절가, G=메모) |
 | `Database(국내)` | `A2:M` | 국내주식 (A=종목코드, B=종목명, F=티어("1티어"형식), L=평가금, M=보유비율%) |
 | `Database(원자재)` | `A2:J` | 원자재 현재가 (A=티커, J=현재가) — 금=GOLD(KRW), 은=SLV(USD), 구리=FCX(USD), 천연가스=LNG(USD) |
-| `현금` | `M1` | 원달러 환율 (KRW, `₩1,471.32` 형식) |
+| `Database(현금)` | `A2:J` | 환율 (USDKRW 행 J열 = 원달러 환율 KRW) |
 
 **쓰기:** `매매가관리` 시트에 A열로 종목 찾아 해당 행 B~G열 업데이트  
 **쓰기:** `자산현황!H1:J1` — 티어 목표비중 (updateTierTarget)
@@ -50,7 +50,7 @@ parseNum(v) = parseFloat(v.replace(/[₩$\s,]/g, ''))   ← ₩/$/ 공백/쉼표
 금          → Database(원자재) GOLD행 J열   KRW 그대로
 은/구리/천연가스 → SLV/FCX/LNG행 J열 × 환율  USD → KRW 환산
 미국주식    → parseNum(I열)                 KRW 그대로 (시트에서 이미 환산됨)
-환율        → parseNum(현금!M1) || 1350
+환율        → Database(현금) USDKRW행 J열 || 1350
 ```
 
 ## 아키텍처 & 핵심 파일

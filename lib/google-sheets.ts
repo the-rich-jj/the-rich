@@ -71,11 +71,12 @@ export async function fetchAssetData(): Promise<{
     sheets.spreadsheets.values.get({ spreadsheetId: id, range: '자산현황!E2' }),
     sheets.spreadsheets.values.get({ spreadsheetId: id, range: '자산현황!H1:J1' }),
     sheets.spreadsheets.values.get({ spreadsheetId: id, range: 'Database(원자재)!A2:J' }),
-    sheets.spreadsheets.values.get({ spreadsheetId: id, range: '현금!M1' }),
+    sheets.spreadsheets.values.get({ spreadsheetId: id, range: 'Database(현금)!A2:J' }),
   ])
 
-  const parseNum = (v: unknown) => parseFloat(String(v ?? '').replace(/[₩$\s,]/g, '')) || 0
-  const exchangeRate = parseNum((fxRes.data.values ?? [])[0]?.[0]) || 1350
+  const parseNum = (v: unknown) => parseFloat(String(v ?? '').replace(/[₩$\s,¥]/g, '')) || 0
+  const usdRow = (fxRes.data.values ?? []).find(r => r[0] === 'USDKRW')
+  const exchangeRate = parseNum(usdRow?.[9]) || 1350
   // Database(원자재) A2:J — A=티커, J=현재가(KRW or USD)
   const tickerPrice: Record<string, number> = {}
   for (const r of (commodityPriceRes.data.values ?? [])) {
