@@ -103,6 +103,7 @@ lib/
 - **가격 박스(2차매수가/3차매수가/익절가) 3개 항상 표시** — 값 없으면 `--` placeholder
   - 값 있을 때: 탭 → 툴팁(메모 미리보기+연필 아이콘) → 연필 탭 → 바텀시트 편집
   - 값 없을 때: 탭 → 바로 바텀시트 편집 (툴팁 스킵). `매매가관리` 행 없어도 저장 시 자동 append
+  - 표시 포맷: `fmtPrice()` — 만/억 변환 없이 입력값 그대로, 쉼표만 추가 (`toLocaleString` with `maximumFractionDigits: 10`)
 - **대응 메모 박스**: 항상 표시. 값 없으면 흐린 "대응 메모" placeholder. 우측 연필 아이콘. `line-clamp-3`
 - **바텀시트 모달**: `position: fixed; bottom: 0` + `window.innerHeight + resize` 리스너로 키보드 바로 위에 위치
   - `body.position = 'fixed'`으로 배경 스크롤 잠금
