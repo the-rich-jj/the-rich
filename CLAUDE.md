@@ -85,6 +85,7 @@ lib/
 - 비트코인 → `domesticAssets.find(a => a.name === '비트코인')?.targetAmount`
 - 이더리움/리플 → `알트코인` 목표액 ÷ 2 (각각 절반씩)
 - `filteredUsAssets = usAssets.filter(a => a.targetAmount > 0)` — 목표 0인 미국주식 숨김
+- `자산현황` 시트에 `달러` 행이 있어도 대시보드에서 필터링하여 표시 안 함 (`dashboard-client.tsx` commodityAssets 필터)
 
 **전체 탭 렌더링**: 원자재 → 미국주식 → 국내주식(티어카드 3개) → 암호화폐 순서로 모두 표시. 검색 시 티어카드도 종목명 기준으로 필터링 포함.
 
@@ -99,8 +100,10 @@ lib/
 - 종목별 진행바: `currentAmount / targetAmount * 100%`
 - 헤더: 종목명 + 심볼 · 현재가(KRW) 표시 — `currentPriceKRW` prop
 - 추가금액 옆 구매 가능 수량 자동계산: `+219만 추가 (≈2주)` — `Math.floor(transferAmount / currentPriceKRW)`
-- 가격 박스(2차매수가/3차매수가/익절가) 탭 → 툴팁(메모 미리보기+연필 아이콘) → 연필 탭 → 바텀시트 편집
-- **대응 메모 박스**: `actionMemo` 내용만 표시(라벨 없음), 우측 연필 아이콘. 패딩 `px-3 py-1.5`. `line-clamp-3`
+- **가격 박스(2차매수가/3차매수가/익절가) 3개 항상 표시** — 값 없으면 `--` placeholder
+  - 값 있을 때: 탭 → 툴팁(메모 미리보기+연필 아이콘) → 연필 탭 → 바텀시트 편집
+  - 값 없을 때: 탭 → 바로 바텀시트 편집 (툴팁 스킵). `매매가관리` 행 없어도 저장 시 자동 append
+- **대응 메모 박스**: 항상 표시. 값 없으면 흐린 "대응 메모" placeholder. 우측 연필 아이콘. `line-clamp-3`
 - **바텀시트 모달**: `position: fixed; bottom: 0` + `window.innerHeight + resize` 리스너로 키보드 바로 위에 위치
   - `body.position = 'fixed'`으로 배경 스크롤 잠금
   - `window.innerHeight` 기준 `top` 계산 → 키보드 열리면 innerHeight 감소 → 자동 재배치
