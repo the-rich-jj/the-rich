@@ -21,8 +21,6 @@ interface AssetCardProps {
   takeProfitMemo?: string
   actionMemo?: string
   color: string
-  isUsdBased?: boolean
-  exchangeRate?: number
 }
 
 type BoxKey = "second" | "third" | "profit"
@@ -33,9 +31,7 @@ function fmtPrice(s: string): string {
   if (/[^\d.,₩$\s-]/.test(s) || s.includes('$') || s.includes('₩')) return s.trim()
   const n = parseFloat(s.replace(/,/g, ''))
   if (isNaN(n)) return s.trim()
-  if (n >= 100000000) return `${(n / 100000000).toFixed(1)}억`
-  if (n >= 10000) return `${Math.round(n / 10000)}만`
-  return n.toLocaleString()
+  return n.toLocaleString('ko-KR', { maximumFractionDigits: 10 })
 }
 
 export function AssetCard({
