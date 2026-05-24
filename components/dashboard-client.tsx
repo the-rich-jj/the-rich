@@ -182,7 +182,7 @@ export function DashboardClient({ domesticAssets, usAssets, prices, domesticStoc
     }).catch(() => {})
   }
 
-  const commodityAssets = domesticAssets.filter(a => !CRYPTO_NAMES.has(a.name))
+  const commodityAssets = domesticAssets.filter(a => !CRYPTO_NAMES.has(a.name) && a.name !== '달러')
   const filteredUsAssets = usAssets.filter(a => a.targetAmount > 0)
   const altTarget = Math.round((domesticAssets.find(a => a.name === '알트코인')?.targetAmount ?? 0) / 2)
   const coinTargetMap: Record<string, number> = {
