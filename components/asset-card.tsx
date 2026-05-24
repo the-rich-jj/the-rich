@@ -95,7 +95,7 @@ export function AssetCard({
     { key: "profit", label: "익절가",     priceKey: "takeProfitPrice", memoKey: "takeProfitMemo", bgColor: "#1E2820", textClass: "text-primary", tooltipAlign: "right-0 left-auto" },
   ]
 
-  const visibleBoxes = priceBoxes.filter(box => !!local[box.priceKey]?.trim())
+  const visibleBoxes = priceBoxes
   const activeBox = priceBoxes.find(b => b.key === openModal)
   const savedScrollY = useRef(0)
   const sheetRef = useRef<HTMLDivElement>(null)
@@ -265,11 +265,7 @@ export function AssetCard({
           </div>
 
           {/* Price Targets */}
-          {visibleBoxes.length > 0 && (
-            <div className={`grid gap-1.5 ${
-              visibleBoxes.length === 3 ? 'grid-cols-3' :
-              visibleBoxes.length === 2 ? 'grid-cols-2' : 'grid-cols-1'
-            }`}>
+          <div className="grid gap-1.5 grid-cols-3">
               {visibleBoxes.map(box => {
                 const memo = local[box.memoKey]
                 return (
@@ -305,39 +301,40 @@ export function AssetCard({
                     <button
                       onClick={(e: React.MouseEvent) => {
                         e.stopPropagation()
-                        setOpenTooltip(prev => prev === box.key ? null : box.key)
+                        if (!local[box.priceKey]?.trim()) {
+                          openPriceModal(box)
+                        } else {
+                          setOpenTooltip(prev => prev === box.key ? null : box.key)
+                        }
                       }}
                       className="w-full rounded-lg p-1.5 text-center active:opacity-70"
                       style={{ backgroundColor: box.bgColor }}
                     >
                       <p className="text-xs text-muted-foreground mb-0.5">{box.label}</p>
-                      <p className={`text-xs font-medium ${box.textClass}`}>
-                        {fmtPrice(local[box.priceKey])}
+                      <p className={`text-xs font-medium ${local[box.priceKey]?.trim() ? box.textClass : 'text-muted-foreground/30'}`}>
+                        {fmtPrice(local[box.priceKey]) || '--'}
                       </p>
                     </button>
                   </div>
                 )
               })}
-            </div>
-          )}
+          </div>
 
           {/* 대응 메모 — 라벨 없이 내용만, 우측 수정 아이콘 */}
-          {local.actionMemo?.trim() && (
-            <div
-              className="mt-1.5 rounded-lg px-3 py-1.5 flex items-start gap-2"
-              style={{ backgroundColor: '#252528' }}
+          <div
+            className="mt-1.5 rounded-lg px-3 py-1.5 flex items-start gap-2"
+            style={{ backgroundColor: '#252528' }}
+          >
+            <p className="text-xs leading-relaxed flex-1 line-clamp-3 text-foreground/80">
+              {local.actionMemo?.trim() || <span className="text-muted-foreground/30">대응 메모</span>}
+            </p>
+            <button
+              onClick={openActionModal}
+              className="flex-shrink-0 opacity-60 active:opacity-100 mt-0.5"
             >
-              <p className="text-xs text-foreground/80 leading-relaxed flex-1 line-clamp-3">
-                {local.actionMemo}
-              </p>
-              <button
-                onClick={openActionModal}
-                className="flex-shrink-0 opacity-60 active:opacity-100 mt-0.5"
-              >
-                <Pencil className="w-3 h-3 text-muted-foreground" />
-              </button>
-            </div>
-          )}
+              <Pencil className="w-3 h-3 text-muted-foreground" />
+            </button>
+          </div>
         </CardContent>
       </Card>
 
