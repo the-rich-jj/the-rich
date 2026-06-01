@@ -34,6 +34,17 @@ function fmtPrice(s: string): string {
   return n.toLocaleString('ko-KR', { maximumFractionDigits: 10 })
 }
 
+function parsePriceToKRW(priceStr: string, rate: number): number | null {
+  if (!priceStr?.trim()) return null
+  const s = priceStr.trim()
+  if (s.startsWith('$')) {
+    const n = parseFloat(s.slice(1).replace(/,/g, ''))
+    return isNaN(n) ? null : n * rate
+  }
+  const n = parseFloat(s.replace(/[₩,\s]/g, ''))
+  return !isNaN(n) && n > 0 ? n : null
+}
+
 export function AssetCard({
   name, symbol, icon,
   targetAmount, currentAmount, transferAmount, currentPriceKRW,
@@ -57,6 +68,24 @@ export function AssetCard({
 
   const percentage = targetAmount > 0 ? Math.min((currentAmount / targetAmount) * 100, 100) : 0
 
+  const secondNum = parsePriceToKRW(local.secondBuyPrice, exchangeRate)
+  const thirdNum = parsePriceToKRW(local.thirdBuyPrice, exchangeRate)
+  const profitNum = parsePriceToKRW(local.takeProfitPrice, exchangeRate)
+
+  const alertMap = {
+    second: !!(currentPriceKRW && secondNum && currentPriceKRW <= secondNum),
+    third:  !!(currentPriceKRW && thirdNum  && currentPriceKRW <= thirdNum),
+    profit: !!(currentPriceKRW && profitNum && currentPriceKRW >= profitNum),
+  }
+
+  const glowColor = alertMap.profit
+    ? { solid: '#22C55E', glow: 'rgba(34,197,94,0.45)', soft: 'rgba(34,197,94,0.15)' }
+    : alertMap.third
+    ? { solid: '#EF4444', glow: 'rgba(239,68,68,0.45)',  soft: 'rgba(239,68,68,0.15)' }
+    : alertMap.second
+    ? { solid: '#F5A623', glow: 'rgba(245,166,35,0.45)', soft: 'rgba(245,166,35,0.15)' }
+    : null
+
   const fmt = (amount: number) => {
     if (showUsd) {
       const usd = amount / exchangeRate
@@ -77,6 +106,12 @@ export function AssetCard({
 
   const tipLeft = Math.max(6, Math.min(percentage, 92))
 
+  const alertColors: Record<BoxKey, { solid: string; glow: string }> = {
+    second: { solid: '#F5A623', glow: 'rgba(245,166,35,0.5)' },
+    third:  { solid: '#EF4444', glow: 'rgba(239,68,68,0.5)' },
+    profit: { solid: '#22C55E', glow: 'rgba(34,197,94,0.5)' },
+  }
+
   const priceBoxes: Array<{
     key: BoxKey
     label: string
@@ -85,10 +120,11 @@ export function AssetCard({
     bgColor: string
     textClass: string
     tooltipAlign: string
+    alertLabel: string
   }> = [
-    { key: "second", label: "2차 매수가", priceKey: "secondBuyPrice", memoKey: "secondBuyMemo", bgColor: "#252528", textClass: "text-foreground",  tooltipAlign: "left-0" },
-    { key: "third",  label: "3차 매수가", priceKey: "thirdBuyPrice",  memoKey: "thirdBuyMemo",  bgColor: "#252528", textClass: "text-foreground",  tooltipAlign: "left-1/2 -translate-x-1/2" },
-    { key: "profit", label: "익절가",     priceKey: "takeProfitPrice", memoKey: "takeProfitMemo", bgColor: "#1E2820", textClass: "text-primary", tooltipAlign: "right-0 left-auto" },
+    { key: "second", label: "2차 매수가", priceKey: "secondBuyPrice", memoKey: "secondBuyMemo", bgColor: "#252528", textClass: "text-foreground",  tooltipAlign: "left-0",                   alertLabel: "↓ 도달" },
+    { key: "third",  label: "3차 매수가", priceKey: "thirdBuyPrice",  memoKey: "thirdBuyMemo",  bgColor: "#252528", textClass: "text-foreground",  tooltipAlign: "left-1/2 -translate-x-1/2", alertLabel: "↓ 도달" },
+    { key: "profit", label: "익절가",     priceKey: "takeProfitPrice", memoKey: "takeProfitMemo", bgColor: "#1E2820", textClass: "text-primary", tooltipAlign: "right-0 left-auto",          alertLabel: "↑ 도달" },
   ]
 
   const visibleBoxes = priceBoxes
@@ -194,7 +230,13 @@ export function AssetCard({
 
   return (
     <>
-      <Card className="border-border/50 py-3 bg-[#1A1A1E]">
+      <Card
+        className="border-border/50 py-3 bg-[#1A1A1E] transition-shadow duration-700"
+        style={glowColor ? {
+          boxShadow: `0 0 0 1px ${glowColor.glow}, 0 0 18px 4px ${glowColor.glow}, 0 0 40px 12px ${glowColor.soft}`,
+          borderColor: glowColor.solid,
+        } : undefined}
+      >
         <CardContent className="px-3">
           {/* Header */}
           <div className="flex items-center gap-2 mb-0">
@@ -303,13 +345,26 @@ export function AssetCard({
                           setOpenTooltip(prev => prev === box.key ? null : box.key)
                         }
                       }}
-                      className="w-full rounded-lg p-1.5 text-center active:opacity-70"
-                      style={{ backgroundColor: box.bgColor }}
+                      className="w-full rounded-lg p-1.5 text-center active:opacity-70 transition-all duration-500"
+                      style={{
+                        backgroundColor: box.bgColor,
+                        ...(alertMap[box.key] ? {
+                          border: `1px solid ${alertColors[box.key].solid}`,
+                          boxShadow: `0 0 8px 1px ${alertColors[box.key].glow}`,
+                        } : {
+                          border: '1px solid transparent',
+                        }),
+                      }}
                     >
                       <p className="text-xs text-muted-foreground mb-0.5">{box.label}</p>
                       <p className={`text-xs font-medium ${local[box.priceKey]?.trim() ? box.textClass : 'text-muted-foreground/30'}`}>
                         {fmtPrice(local[box.priceKey]) || '--'}
                       </p>
+                      {alertMap[box.key] && (
+                        <p className="text-[10px] font-semibold mt-0.5" style={{ color: alertColors[box.key].solid }}>
+                          {box.alertLabel}
+                        </p>
+                      )}
                     </button>
                   </div>
                 )

@@ -130,7 +130,7 @@ function buildUsAssets(assets: UsAsset[], prices: Record<string, PriceData>, sta
       id: startId + idx,
       name: asset.name,
       ...config,
-      isUsdBased: true,
+      isUsdBased: !asset.isKrwPriced,
       symbol: asset.ticker || asset.name.split(' ')[0].toUpperCase().slice(0, 6),
       currentAmount: asset.currentAmount,
       targetAmount: asset.targetAmount,

@@ -48,7 +48,13 @@ export type UsAsset = {
   targetAmount: number
   transferAmount: number
   currentPriceKRW?: number
+  isKrwPriced?: boolean
 }
+
+// Database(미국) 시트에 등록돼 있지만 실제 원화로 거래되는 종목 (현재가 J열이 KRW)
+const KRW_PRICED_IN_US_SHEET = new Set([
+  'KODEX 미국AI 전력핵심인프라',
+])
 
 export type PriceData = {
   secondBuyPrice: string
@@ -120,13 +126,18 @@ export async function fetchAssetData(): Promise<{
   const us: UsAsset[] = (usRes.data.values ?? [])
     .map(r => {
       const name = (r[1] ?? '').toString().trim()
-      const priceKRW = Math.round(parseNum(r[9]) * exchangeRate)
+      const isKrwPriced = KRW_PRICED_IN_US_SHEET.has(name)
+      const rawPrice = parseNum(r[9])
+      const priceKRW = rawPrice > 0
+        ? (isKrwPriced ? Math.round(rawPrice) : Math.round(rawPrice * exchangeRate))
+        : 0
       return {
         name,
         ticker: (r[0] ?? '').toString().trim(),
         currentAmount: parseKRW(r[11] ?? ''),
         targetAmount: parseKRW(r[14] ?? ''),
         transferAmount: parseKRW(r[15] ?? ''),
+        isKrwPriced,
         ...(priceKRW > 0 ? { currentPriceKRW: priceKRW } : {}),
       }
     })
