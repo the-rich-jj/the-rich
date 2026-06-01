@@ -241,8 +241,9 @@ export function AssetCard({
         className="border-border/50 py-3 transition-all duration-700"
         style={{
           background: hasAnyAlert
-            ? `radial-gradient(ellipse at 50% 130%, ${color}80 0%, #1A1A1E 62%)`
+            ? `linear-gradient(to top, ${color}50 0%, #1A1A1E 55%)`
             : '#1A1A1E',
+          border: hasAnyAlert ? `1px solid ${color}40` : undefined,
         }}
       >
         <CardContent className="px-3">
