@@ -5,6 +5,7 @@ import { DashboardHeader } from "@/components/dashboard-header"
 import { AssetCard } from "@/components/asset-card"
 import { DomesticStockCard } from "@/components/domestic-stock-card"
 import type { CoinAsset, DomesticAsset, DomesticStock, PriceData, UsAsset } from "@/lib/google-sheets"
+import { hasAnyPriceAlert } from "@/lib/price-alert"
 import {
   Gem, CircleDollarSign, Cpu, Flame, Bitcoin, Coins, Zap,
   TrendingUp, ShoppingCart, Globe, Monitor, Shield, Pill, Rocket,
@@ -202,6 +203,11 @@ export function DashboardClient({ domesticAssets, usAssets, prices, domesticStoc
       const q = searchQuery.trim().toLowerCase()
       if (!q) return true
       return a.name.toLowerCase().includes(q) || a.symbol.toLowerCase().includes(q)
+    })
+    .sort((a, b) => {
+      const aAlert = hasAnyPriceAlert(a.secondBuyPrice, a.thirdBuyPrice, a.takeProfitPrice, a.currentPriceKRW ?? 0, exchangeRate)
+      const bAlert = hasAnyPriceAlert(b.secondBuyPrice, b.thirdBuyPrice, b.takeProfitPrice, b.currentPriceKRW ?? 0, exchangeRate)
+      return (bAlert ? 1 : 0) - (aAlert ? 1 : 0)
     })
 
   // 국내주식 tier 집계

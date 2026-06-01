@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from "react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Pencil } from "lucide-react"
+import { checkPriceAlert } from "@/lib/price-alert"
 
 interface AssetCardProps {
   name: string
@@ -34,39 +35,6 @@ function fmtPrice(s: string): string {
   return n.toLocaleString('ko-KR', { maximumFractionDigits: 10 })
 }
 
-function parseSingleNum(s: string, rate: number): number | null {
-  const t = s.trim()
-  if (t.startsWith('$')) {
-    const n = parseFloat(t.slice(1).replace(/,/g, ''))
-    return isNaN(n) ? null : n * rate
-  }
-  const n = parseFloat(t.replace(/[₩,\s]/g, ''))
-  return !isNaN(n) && n > 0 ? n : null
-}
-
-// "X이상 Y이하", "X이하", "X이상", 또는 순수 숫자 표현을 모두 해석
-function checkPriceAlert(priceStr: string, currentKRW: number, rate: number, defaultDir: 'lte' | 'gte'): boolean {
-  if (!priceStr?.trim() || !currentKRW) return false
-  const s = priceStr.trim()
-  const loM = s.match(/([0-9,.₩$]+)\s*이상/)
-  const hiM = s.match(/([0-9,.₩$]+)\s*이하/)
-  if (loM && hiM) {
-    const lo = parseSingleNum(loM[1], rate)
-    const hi = parseSingleNum(hiM[1], rate)
-    if (lo !== null && hi !== null) return currentKRW >= lo && currentKRW <= hi
-  }
-  if (hiM) {
-    const hi = parseSingleNum(hiM[1], rate)
-    if (hi !== null) return currentKRW <= hi
-  }
-  if (loM) {
-    const lo = parseSingleNum(loM[1], rate)
-    if (lo !== null) return currentKRW >= lo
-  }
-  const p = parseSingleNum(s, rate)
-  if (p !== null) return defaultDir === 'lte' ? currentKRW <= p : currentKRW >= p
-  return false
-}
 
 export function AssetCard({
   name, symbol, icon,
