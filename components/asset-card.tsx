@@ -34,15 +34,38 @@ function fmtPrice(s: string): string {
   return n.toLocaleString('ko-KR', { maximumFractionDigits: 10 })
 }
 
-function parsePriceToKRW(priceStr: string, rate: number): number | null {
-  if (!priceStr?.trim()) return null
-  const s = priceStr.trim()
-  if (s.startsWith('$')) {
-    const n = parseFloat(s.slice(1).replace(/,/g, ''))
+function parseSingleNum(s: string, rate: number): number | null {
+  const t = s.trim()
+  if (t.startsWith('$')) {
+    const n = parseFloat(t.slice(1).replace(/,/g, ''))
     return isNaN(n) ? null : n * rate
   }
-  const n = parseFloat(s.replace(/[₩,\s]/g, ''))
+  const n = parseFloat(t.replace(/[₩,\s]/g, ''))
   return !isNaN(n) && n > 0 ? n : null
+}
+
+// "X이상 Y이하", "X이하", "X이상", 또는 순수 숫자 표현을 모두 해석
+function checkPriceAlert(priceStr: string, currentKRW: number, rate: number, defaultDir: 'lte' | 'gte'): boolean {
+  if (!priceStr?.trim() || !currentKRW) return false
+  const s = priceStr.trim()
+  const loM = s.match(/([0-9,.₩$]+)\s*이상/)
+  const hiM = s.match(/([0-9,.₩$]+)\s*이하/)
+  if (loM && hiM) {
+    const lo = parseSingleNum(loM[1], rate)
+    const hi = parseSingleNum(hiM[1], rate)
+    if (lo !== null && hi !== null) return currentKRW >= lo && currentKRW <= hi
+  }
+  if (hiM) {
+    const hi = parseSingleNum(hiM[1], rate)
+    if (hi !== null) return currentKRW <= hi
+  }
+  if (loM) {
+    const lo = parseSingleNum(loM[1], rate)
+    if (lo !== null) return currentKRW >= lo
+  }
+  const p = parseSingleNum(s, rate)
+  if (p !== null) return defaultDir === 'lte' ? currentKRW <= p : currentKRW >= p
+  return false
 }
 
 export function AssetCard({
@@ -68,23 +91,13 @@ export function AssetCard({
 
   const percentage = targetAmount > 0 ? Math.min((currentAmount / targetAmount) * 100, 100) : 0
 
-  const secondNum = parsePriceToKRW(local.secondBuyPrice, exchangeRate)
-  const thirdNum = parsePriceToKRW(local.thirdBuyPrice, exchangeRate)
-  const profitNum = parsePriceToKRW(local.takeProfitPrice, exchangeRate)
-
   const alertMap = {
-    second: !!(currentPriceKRW && secondNum && currentPriceKRW <= secondNum),
-    third:  !!(currentPriceKRW && thirdNum  && currentPriceKRW <= thirdNum),
-    profit: !!(currentPriceKRW && profitNum && currentPriceKRW >= profitNum),
+    second: checkPriceAlert(local.secondBuyPrice,  currentPriceKRW ?? 0, exchangeRate, 'lte'),
+    third:  checkPriceAlert(local.thirdBuyPrice,   currentPriceKRW ?? 0, exchangeRate, 'lte'),
+    profit: checkPriceAlert(local.takeProfitPrice, currentPriceKRW ?? 0, exchangeRate, 'gte'),
   }
 
-  const glowColor = alertMap.profit
-    ? { solid: '#22C55E', glow: 'rgba(34,197,94,0.45)', soft: 'rgba(34,197,94,0.15)' }
-    : alertMap.third
-    ? { solid: '#EF4444', glow: 'rgba(239,68,68,0.45)',  soft: 'rgba(239,68,68,0.15)' }
-    : alertMap.second
-    ? { solid: '#F5A623', glow: 'rgba(245,166,35,0.45)', soft: 'rgba(245,166,35,0.15)' }
-    : null
+  const hasAnyAlert = alertMap.second || alertMap.third || alertMap.profit
 
   const fmt = (amount: number) => {
     if (showUsd) {
@@ -105,12 +118,6 @@ export function AssetCard({
     : null
 
   const tipLeft = Math.max(6, Math.min(percentage, 92))
-
-  const alertColors: Record<BoxKey, { solid: string; glow: string }> = {
-    second: { solid: '#F5A623', glow: 'rgba(245,166,35,0.5)' },
-    third:  { solid: '#EF4444', glow: 'rgba(239,68,68,0.5)' },
-    profit: { solid: '#22C55E', glow: 'rgba(34,197,94,0.5)' },
-  }
 
   const priceBoxes: Array<{
     key: BoxKey
@@ -231,11 +238,12 @@ export function AssetCard({
   return (
     <>
       <Card
-        className="border-border/50 py-3 bg-[#1A1A1E] transition-shadow duration-700"
-        style={glowColor ? {
-          boxShadow: `0 0 0 1px ${glowColor.glow}, 0 0 18px 4px ${glowColor.glow}, 0 0 40px 12px ${glowColor.soft}`,
-          borderColor: glowColor.solid,
-        } : undefined}
+        className="border-border/50 py-3 transition-all duration-700"
+        style={{
+          background: hasAnyAlert
+            ? `radial-gradient(ellipse at 50% 130%, ${color}1E 0%, #1A1A1E 62%)`
+            : '#1A1A1E',
+        }}
       >
         <CardContent className="px-3">
           {/* Header */}
@@ -345,23 +353,15 @@ export function AssetCard({
                           setOpenTooltip(prev => prev === box.key ? null : box.key)
                         }
                       }}
-                      className="w-full rounded-lg p-1.5 text-center active:opacity-70 transition-all duration-500"
-                      style={{
-                        backgroundColor: box.bgColor,
-                        ...(alertMap[box.key] ? {
-                          border: `1px solid ${alertColors[box.key].solid}`,
-                          boxShadow: `0 0 8px 1px ${alertColors[box.key].glow}`,
-                        } : {
-                          border: '1px solid transparent',
-                        }),
-                      }}
+                      className="w-full rounded-lg p-1.5 text-center active:opacity-70"
+                      style={{ backgroundColor: box.bgColor }}
                     >
                       <p className="text-xs text-muted-foreground mb-0.5">{box.label}</p>
                       <p className={`text-xs font-medium ${local[box.priceKey]?.trim() ? box.textClass : 'text-muted-foreground/30'}`}>
                         {fmtPrice(local[box.priceKey]) || '--'}
                       </p>
                       {alertMap[box.key] && (
-                        <p className="text-[10px] font-semibold mt-0.5" style={{ color: alertColors[box.key].solid }}>
+                        <p className="text-[10px] font-medium mt-0.5 text-muted-foreground/60">
                           {box.alertLabel}
                         </p>
                       )}
