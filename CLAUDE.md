@@ -55,6 +55,9 @@ parseNum(v) = parseFloat(v.replace(/[₩$\s,]/g, ''))   ← ₩/$/ 공백/쉼표
 환율        → Database(현금) USDKRW행 J열 || 1350
 ```
 
+**KRW 예외 종목** (`google-sheets.ts` `KRW_PRICED_IN_US_SHEET`): `Database(미국)` 시트에 등록돼 있지만 실제 원화 거래 종목은 환율 곱셈 없이 J열을 KRW 그대로 사용하고 `isUsdBased=false` 처리.
+- 현재 예외: `KODEX 미국AI 전력핵심인프라` (추가 시 Set에 이름만 넣으면 됨)
+
 ## 아키텍처 & 핵심 파일
 
 ```
@@ -73,6 +76,7 @@ components/
 
 lib/
   google-sheets.ts          # Google Sheets API — fetchAssetData() + updatePriceCell() + updateTierTarget()
+  price-alert.ts            # checkPriceAlert / hasAnyPriceAlert — 지정가 도달 판단 유틸
 ```
 
 ## 카테고리 & ASSET_CONFIG
@@ -104,6 +108,12 @@ lib/
   - 값 있을 때: 탭 → 툴팁(메모 미리보기+연필 아이콘) → 연필 탭 → 바텀시트 편집
   - 값 없을 때: 탭 → 바로 바텀시트 편집 (툴팁 스킵). `매매가관리` 행 없어도 저장 시 자동 append
   - 표시 포맷: `fmtPrice()` — 만/억 변환 없이 입력값 그대로, 쉼표만 추가 (`toLocaleString` with `maximumFractionDigits: 10`)
+- **지정가 도달 알림** (`lib/price-alert.ts`):
+  - 2차/3차 매수가: 현재가 ≤ 설정가 (기본), "X이하" / "X이상 Y이하" 등 한국어 조건식도 파싱
+  - 익절가: 현재가 ≥ 설정가 (기본), "X이상" 등 파싱
+  - 도달 시: 카드 배경에 하단→상단 linear-gradient (종목 고유 색, 50% 불투명도) + 연한 테두리
+  - 도달한 가격 박스에 "↓ 도달" / "↑ 도달" 배지 표시
+  - `dashboard-client.tsx`에서 `filtered` 정렬 시 도달 카드 상단 배치
 - **대응 메모 박스**: 항상 표시. 값 없으면 흐린 "대응 메모" placeholder. 우측 연필 아이콘. `line-clamp-3`
 - **바텀시트 모달**: `position: fixed; bottom: 0` + `window.innerHeight + resize` 리스너로 키보드 바로 위에 위치
   - `body.position = 'fixed'`으로 배경 스크롤 잠금
