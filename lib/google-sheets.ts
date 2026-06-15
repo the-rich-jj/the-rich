@@ -39,6 +39,7 @@ export type DomesticStock = {
   tier: string
   evalAmount: number
   heldRatio: number
+  excluded: boolean
 }
 
 export type UsAsset = {
@@ -84,7 +85,7 @@ export async function fetchAssetData(): Promise<{
     sheets.spreadsheets.values.get({ spreadsheetId: id, range: '자산현황!A4:F9' }),
     sheets.spreadsheets.values.get({ spreadsheetId: id, range: 'Database(미국)!A2:P' }),
     sheets.spreadsheets.values.get({ spreadsheetId: id, range: '매매가관리!A2:H30' }),
-    sheets.spreadsheets.values.get({ spreadsheetId: id, range: 'Database(국내)!A2:M' }),
+    sheets.spreadsheets.values.get({ spreadsheetId: id, range: 'Database(국내)!A2:N' }),
     sheets.spreadsheets.values.get({ spreadsheetId: id, range: '자산현황!E2' }),
     sheets.spreadsheets.values.get({ spreadsheetId: id, range: '자산현황!H1:J1' }),
     sheets.spreadsheets.values.get({ spreadsheetId: id, range: 'Database(원자재)!A2:J' }),
@@ -164,6 +165,7 @@ export async function fetchAssetData(): Promise<{
       tier: (r[5] ?? '').toString().trim().replace('티어', ''),
       evalAmount: parseKRW(r[11] ?? ''),
       heldRatio: parseFloat((r[12] ?? '').toString().replace(/%/g, '').replace(/,/g, '')) || 0,
+      excluded: (r[13] ?? '').toString().trim().toUpperCase() === 'Y',
     }))
     .filter(s => ['1', '2', '3'].includes(s.tier))
 
