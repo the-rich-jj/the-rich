@@ -38,8 +38,12 @@ export function checkPriceAlert(
     const loStr = s.slice(0, tildeIdx).trim()
     const hiStr = s.slice(tildeIdx + 1).trim()
     if (loStr && hiStr) {
+      // $390~410 처럼 앞에만 통화 기호가 있으면 뒤도 같은 통화로 처리
+      const normalizedHi = (loStr.startsWith('$') && !/[$₩]/.test(hiStr)) ? `$${hiStr}`
+                         : (loStr.startsWith('₩') && !/[$₩]/.test(hiStr)) ? `₩${hiStr}`
+                         : hiStr
       const lo = parseSingleNum(loStr, rate)
-      const hi = parseSingleNum(hiStr, rate)
+      const hi = parseSingleNum(normalizedHi, rate)
       if (lo !== null && hi !== null) return currentKRW >= lo && currentKRW <= hi
     } else if (loStr) {
       const lo = parseSingleNum(loStr, rate)

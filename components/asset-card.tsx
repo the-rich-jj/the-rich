@@ -349,11 +349,12 @@ export function AssetCard({
                       <p className={`text-xs font-medium ${local[box.priceKey]?.trim() ? box.textClass : 'text-muted-foreground/30'}`}>
                         {fmtPrice(local[box.priceKey]) || '--'}
                       </p>
-                      {alertMap[box.key] && (
-                        <p className="text-[10px] font-semibold mt-0.5" style={{ color }}>
-                          {box.alertLabel}
-                        </p>
-                      )}
+                      <p
+                        className="text-[10px] font-semibold mt-0.5"
+                        style={{ color, visibility: alertMap[box.key] ? 'visible' : 'hidden' }}
+                      >
+                        {box.alertLabel}
+                      </p>
                     </button>
                     {/* 도달 시 체크 버튼 — 클릭 시 가격 초기화 + 로그 */}
                     {alertMap[box.key] && (
