@@ -39,9 +39,11 @@ GOOGLE_SPREADSHEET_ID           # 스프레드시트 ID: 1r_HrWM_i7pwNV_F_q1pFL1
 | `Database(원자재)` | `A2:J` | 원자재 현재가 (A=티커, J=현재가) — 금=GOLD(KRW), 은=SLV(USD), 구리=FCX(USD), 천연가스=LNG(USD) |
 | `Database(현금)` | `A2:J` | 환율 (USDKRW 행 J열 = 원달러 환율 KRW) |
 | `Database(코인)` | `A2:M` | 코인 (A=티커, B=종목명, J=현재가 KRW, L=평가금 KRW, M=보유비율%) |
+| `액션로그` | `A:E` | 도달 완료 이력 (A=날짜, B=종목명, C=필드명, D=이전가격, E=현재가KRW) |
 
 **쓰기:** `매매가관리` 시트에 A열로 종목 찾아 해당 행 B~H열 업데이트 (H=actionMemo)  
-**쓰기:** `자산현황!H1:J1` — 티어 목표비중 (updateTierTarget)
+**쓰기:** `자산현황!H1:J1` — 티어 목표비중 (updateTierTarget)  
+**append:** `액션로그` — 체크 완료 시 행 추가 (logAlertAction). 시트가 없으면 실패하므로 수동 생성 필요
 
 ### 현재가 계산 방식
 
@@ -67,6 +69,7 @@ app/
   globals.css
   api/update-price/route.ts         # POST — 매매가관리 시트 셀 업데이트
   api/update-tier-target/route.ts   # POST — 자산현황 H1:J1 티어 목표비중 업데이트
+  api/log-action/route.ts           # POST — 도달 완료 이력을 액션로그 시트에 append
 
 components/
   dashboard-client.tsx      # Client Component — 카테고리/검색 상태, ASSET_CONFIG, 티어 targets
@@ -75,7 +78,7 @@ components/
   domestic-stock-card.tsx   # 국내주식 티어 카드 (1/2/3티어) + 종목 리스트 바텀시트
 
 lib/
-  google-sheets.ts          # Google Sheets API — fetchAssetData() + updatePriceCell() + updateTierTarget()
+  google-sheets.ts          # Google Sheets API — fetchAssetData() + updatePriceCell() + updateTierTarget() + logAlertAction()
   price-alert.ts            # checkPriceAlert / hasAnyPriceAlert — 지정가 도달 판단 유틸
 ```
 
@@ -109,11 +112,14 @@ lib/
   - 값 없을 때: 탭 → 바로 바텀시트 편집 (툴팁 스킵). `매매가관리` 행 없어도 저장 시 자동 append
   - 표시 포맷: `fmtPrice()` — 만/억 변환 없이 입력값 그대로, 쉼표만 추가 (`toLocaleString` with `maximumFractionDigits: 10`)
 - **지정가 도달 알림** (`lib/price-alert.ts`):
-  - 2차/3차 매수가: 현재가 ≤ 설정가 (기본), "X이하" / "X이상 Y이하" 등 한국어 조건식도 파싱
-  - 익절가: 현재가 ≥ 설정가 (기본), "X이상" 등 파싱
+  - 2차/3차 매수가: 현재가 ≤ 설정가 (기본), "X이하" / "X이상 Y이하" 한국어 조건식 + `~X` / `X~Y` 범위 연산자 파싱
+  - 익절가: 현재가 ≥ 설정가 (기본), "X이상" / `X~` 파싱
+  - `~` 연산자: `~X`=이하, `X~`=이상, `X~Y`=범위
   - 도달 시: 카드 배경에 하단→상단 linear-gradient (종목 고유 색, 50% 불투명도) + 연한 테두리
-  - 도달한 가격 박스에 "↓ 도달" / "↑ 도달" 배지 표시
+  - 도달한 가격 박스에 종목색 링 테두리(boxShadow) + "↓ 도달" / "↑ 도달" 배지(종목색)
+  - 도달 박스 우상단 ✓ 버튼 — 탭 시 가격 초기화(Sheets 저장) + `액션로그` 시트에 이력 append
   - `dashboard-client.tsx`에서 `filtered` 정렬 시 도달 카드 상단 배치
+  - Card에 `h-full` → CSS Grid stretch로 같은 행 카드 높이 자동 통일
 - **대응 메모 박스**: 항상 표시. 값 없으면 흐린 "대응 메모" placeholder. 우측 연필 아이콘. `line-clamp-3`
 - **바텀시트 모달**: `position: fixed; bottom: 0` + `window.innerHeight + resize` 리스너로 키보드 바로 위에 위치
   - `body.position = 'fixed'`으로 배경 스크롤 잠금
