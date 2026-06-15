@@ -265,7 +265,7 @@ export async function logAlertAction(
   name: string,
   field: string,
   previousValue: string,
-  currentPriceKRW: number,
+  memo: string,
 ) {
   const auth = getAuth(true)
   const sheets = google.sheets({ version: 'v4', auth })
@@ -277,7 +277,7 @@ export async function logAlertAction(
     range: '액션로그!A:E',
     valueInputOption: 'RAW',
     requestBody: {
-      values: [[now, name, FIELD_LABEL[field] ?? field, previousValue, currentPriceKRW]],
+      values: [[now, name, FIELD_LABEL[field] ?? field, previousValue, memo]],
     },
   })
 }

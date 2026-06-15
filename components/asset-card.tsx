@@ -70,7 +70,7 @@ export function AssetCard({
     fetch('/api/log-action', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name, field: box.priceKey, previousValue, currentPriceKRW: currentPriceKRW ?? 0 }),
+      body: JSON.stringify({ name, field: box.priceKey, previousValue, memo: local[box.memoKey] }),
     }).catch(() => {})
   }
 
@@ -346,15 +346,17 @@ export function AssetCard({
                       }}
                     >
                       <p className="text-xs text-muted-foreground mb-0.5">{box.label}</p>
-                      <p className={`text-xs font-medium ${local[box.priceKey]?.trim() ? box.textClass : 'text-muted-foreground/30'}`}>
-                        {fmtPrice(local[box.priceKey]) || '--'}
-                      </p>
-                      <p
-                        className="text-[10px] font-semibold mt-0.5"
-                        style={{ color, visibility: alertMap[box.key] ? 'visible' : 'hidden' }}
-                      >
-                        {box.alertLabel}
-                      </p>
+                      <div className="flex items-center justify-center gap-1">
+                        <p className={`text-xs font-medium ${local[box.priceKey]?.trim() ? box.textClass : 'text-muted-foreground/30'}`}>
+                          {fmtPrice(local[box.priceKey]) || '--'}
+                        </p>
+                        <p
+                          className="text-[10px] font-semibold"
+                          style={{ color, visibility: alertMap[box.key] ? 'visible' : 'hidden' }}
+                        >
+                          {box.alertLabel}
+                        </p>
+                      </div>
                     </button>
                     {/* 도달 시 체크 버튼 — 클릭 시 가격 초기화 + 로그 */}
                     {alertMap[box.key] && (
