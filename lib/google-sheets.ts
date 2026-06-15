@@ -251,3 +251,31 @@ export async function updatePriceCell(name: string, field: string, value: string
     })
   }
 }
+
+const FIELD_LABEL: Record<string, string> = {
+  secondBuyPrice: '2차 매수가',
+  thirdBuyPrice:  '3차 매수가',
+  takeProfitPrice: '익절가',
+}
+
+// "액션로그" 시트에 도달 후 완료 기록 누적
+export async function logAlertAction(
+  name: string,
+  field: string,
+  previousValue: string,
+  currentPriceKRW: number,
+) {
+  const auth = getAuth(true)
+  const sheets = google.sheets({ version: 'v4', auth })
+  const id = process.env.GOOGLE_SPREADSHEET_ID!
+
+  const now = new Date().toLocaleString('ko-KR', { timeZone: 'Asia/Seoul' })
+  await sheets.spreadsheets.values.append({
+    spreadsheetId: id,
+    range: '액션로그!A:E',
+    valueInputOption: 'RAW',
+    requestBody: {
+      values: [[now, name, FIELD_LABEL[field] ?? field, previousValue, currentPriceKRW]],
+    },
+  })
+}

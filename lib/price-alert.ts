@@ -32,6 +32,23 @@ export function checkPriceAlert(
     const lo = parseSingleNum(loM[1], rate)
     if (lo !== null) return currentKRW >= lo
   }
+  // "X~Y" (범위), "~X" (이하), "X~" (이상)
+  const tildeIdx = s.indexOf('~')
+  if (tildeIdx !== -1) {
+    const loStr = s.slice(0, tildeIdx).trim()
+    const hiStr = s.slice(tildeIdx + 1).trim()
+    if (loStr && hiStr) {
+      const lo = parseSingleNum(loStr, rate)
+      const hi = parseSingleNum(hiStr, rate)
+      if (lo !== null && hi !== null) return currentKRW >= lo && currentKRW <= hi
+    } else if (loStr) {
+      const lo = parseSingleNum(loStr, rate)
+      if (lo !== null) return currentKRW >= lo
+    } else if (hiStr) {
+      const hi = parseSingleNum(hiStr, rate)
+      if (hi !== null) return currentKRW <= hi
+    }
+  }
   const p = parseSingleNum(s, rate)
   if (p !== null) return defaultDir === 'lte' ? currentKRW <= p : currentKRW >= p
   return false

@@ -22,6 +22,8 @@ interface AssetCardProps {
   takeProfitMemo?: string
   actionMemo?: string
   color: string
+  isUsdBased?: boolean
+  exchangeRate?: number
 }
 
 type BoxKey = "second" | "third" | "profit"
@@ -56,6 +58,21 @@ export function AssetCard({
   const [draftPrice, setDraftPrice] = useState('')
   const [draftMemo, setDraftMemo] = useState('')
   const [saving, setSaving] = useState(false)
+
+  const handleClearPrice = async (box: typeof priceBoxes[0]) => {
+    const previousValue = local[box.priceKey]
+    setLocal(prev => ({ ...prev, [box.priceKey]: '' }))
+    await fetch('/api/update-price', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name, field: box.priceKey, value: '' }),
+    }).catch(() => {})
+    fetch('/api/log-action', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name, field: box.priceKey, previousValue, currentPriceKRW: currentPriceKRW ?? 0 }),
+    }).catch(() => {})
+  }
 
   const percentage = targetAmount > 0 ? Math.min((currentAmount / targetAmount) * 100, 100) : 0
 
@@ -206,7 +223,7 @@ export function AssetCard({
   return (
     <>
       <Card
-        className="border-border/50 py-3 transition-all duration-700"
+        className="border-border/50 py-3 transition-all duration-700 h-full"
         style={{
           background: hasAnyAlert
             ? `linear-gradient(to top, ${color}50 0%, #1A1A1E 55%)`
@@ -323,18 +340,32 @@ export function AssetCard({
                         }
                       }}
                       className="w-full rounded-lg p-1.5 text-center active:opacity-70"
-                      style={{ backgroundColor: box.bgColor }}
+                      style={{
+                        backgroundColor: box.bgColor,
+                        ...(alertMap[box.key] ? { boxShadow: `0 0 0 1.5px ${color}90` } : {}),
+                      }}
                     >
                       <p className="text-xs text-muted-foreground mb-0.5">{box.label}</p>
                       <p className={`text-xs font-medium ${local[box.priceKey]?.trim() ? box.textClass : 'text-muted-foreground/30'}`}>
                         {fmtPrice(local[box.priceKey]) || '--'}
                       </p>
                       {alertMap[box.key] && (
-                        <p className="text-[10px] font-medium mt-0.5 text-muted-foreground/60">
+                        <p className="text-[10px] font-semibold mt-0.5" style={{ color }}>
                           {box.alertLabel}
                         </p>
                       )}
                     </button>
+                    {/* 도달 시 체크 버튼 — 클릭 시 가격 초기화 + 로그 */}
+                    {alertMap[box.key] && (
+                      <button
+                        onClick={(e: React.MouseEvent) => { e.stopPropagation(); handleClearPrice(box) }}
+                        className="absolute top-1 right-1 w-5 h-5 flex items-center justify-center rounded-full text-[10px] font-bold z-10 active:scale-90"
+                        style={{ backgroundColor: `${color}30`, color }}
+                        title="완료 처리 (가격 초기화)"
+                      >
+                        ✓
+                      </button>
+                    )}
                   </div>
                 )
               })}
