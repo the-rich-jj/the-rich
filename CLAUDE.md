@@ -39,7 +39,7 @@ GOOGLE_SPREADSHEET_ID           # 스프레드시트 ID: 1r_HrWM_i7pwNV_F_q1pFL1
 | `Database(원자재)` | `A2:J` | 원자재 현재가 (A=티커, J=현재가) — 금=GOLD(KRW), 은=SLV(USD), 구리=FCX(USD), 천연가스=LNG(USD) |
 | `Database(현금)` | `A2:J` | 환율 (USDKRW 행 J열 = 원달러 환율 KRW) |
 | `Database(코인)` | `A2:M` | 코인 (A=티커, B=종목명, J=현재가 KRW, L=평가금 KRW, M=보유비율%) |
-| `액션로그` | `A:E` | 도달 완료 이력 (A=날짜, B=종목명, C=필드명, D=이전가격, E=현재가KRW) |
+| `액션로그` | `A:E` | 도달 완료 이력 (A=날짜, B=종목명, C=필드명, D=이전가격, E=메모) |
 
 **쓰기:** `매매가관리` 시트에 A열로 종목 찾아 해당 행 B~H열 업데이트 (H=actionMemo)  
 **쓰기:** `자산현황!H1:J1` — 티어 목표비중 (updateTierTarget)  
@@ -116,8 +116,8 @@ lib/
   - 익절가: 현재가 ≥ 설정가 (기본), "X이상" / `X~` 파싱
   - `~` 연산자: `~X`=이하, `X~`=이상, `X~Y`=범위
   - 도달 시: 카드 배경에 하단→상단 linear-gradient (종목 고유 색, 50% 불투명도) + 연한 테두리
-  - 도달한 가격 박스에 종목색 링 테두리(boxShadow) + "↓ 도달" / "↑ 도달" 배지(종목색)
-  - 도달 박스 우상단 ✓ 버튼 — 탭 시 가격 초기화(Sheets 저장) + `액션로그` 시트에 이력 append
+  - 도달한 가격 박스에 종목색 링 테두리(boxShadow) + "↓ 도달" / "↑ 도달" 배지(종목색) — 가격과 같은 줄에 인라인 표시 (`inline-flex`), 미도달 시 조건부 렌더링으로 숨겨 가격 가운데 정렬 유지
+  - 도달 박스 우상단 ✓ 버튼 — 탭 시 가격 초기화(Sheets 저장) + `액션로그` 시트에 이력 append (E열=해당 가격 박스 메모)
   - `dashboard-client.tsx`에서 `filtered` 정렬 시 도달 카드 상단 배치
   - Card에 `h-full` → CSS Grid stretch로 같은 행 카드 높이 자동 통일
 - **대응 메모 박스**: 항상 표시. 값 없으면 흐린 "대응 메모" placeholder. 우측 연필 아이콘. `line-clamp-3`
