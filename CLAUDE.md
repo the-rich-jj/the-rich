@@ -35,7 +35,7 @@ GOOGLE_SPREADSHEET_ID           # 스프레드시트 ID: 1r_HrWM_i7pwNV_F_q1pFL1
 | `자산현황` | `H1:J1` | 티어 1/2/3 목표비중 (공유 저장, API로 쓰기) |
 | `Database(미국)` | `A2:P` | 미국주식 (A=티커, B=종목명, J=현재가 USD, L=평가금 KRW, O=목표금액 KRW, P=이동금액 KRW) |
 | `매매가관리` | `A2:H30` | 매수가/익절가/대응메모 (A=종목, B=2차매수가, C=메모, D=3차매수가, E=메모, F=익절가, G=메모, H=대응메모) |
-| `Database(국내)` | `A2:M` | 국내주식 (A=종목코드, B=종목명, F=티어("1티어"형식), L=평가금, M=보유비율%) |
+| `Database(국내)` | `A2:N` | 국내주식 (A=종목코드, B=종목명, F=티어("1티어"형식), L=평가금, M=보유비율%, N=제외여부("Y"=제외)) |
 | `Database(원자재)` | `A2:J` | 원자재 현재가 (A=티커, J=현재가) — 금=GOLD(KRW), 은=SLV(USD), 구리=FCX(USD), 천연가스=LNG(USD) |
 | `Database(현금)` | `A2:J` | 환율 (USDKRW 행 J열 = 원달러 환율 KRW) |
 | `Database(코인)` | `A2:M` | 코인 (A=티커, B=종목명, J=현재가 KRW, L=평가금 KRW, M=보유비율%) |
@@ -139,7 +139,7 @@ lib/
 | 하단 3칸 그리드 | 1종목당 목표 / 목표 비중(✏ 편집) / 종목 리스트 |
 | 종목 리스트 | 버튼 탭 → 바텀시트 (A열 종목명 목록, max-height 55vh, 스크롤) |
 | 목표비중 저장 방식 | 로컬 state + `/api/update-tier-target` POST → Sheets `H1:J1` 쓰기 (전체 공유) |
-| **종목수 집계** | `evalAmount > 0`인 보유 종목만 카운트 (시트 전체 종목 아님). `heldRatio` 합산은 전체 포함 |
+| **종목수 집계** | `evalAmount > 0`인 보유 종목만 카운트. `excluded=true`(N열 Y) 종목은 count/heldRatio/종목리스트 모두 제외 |
 
 ## 아이콘 & 파비콘
 
